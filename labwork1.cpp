@@ -5,7 +5,7 @@
 #include<stdlib.h>
 #include <windows.h> //for Sleep function
 #include <stdio.h>
-#include <my_interaction_functions.h>
+//#include "my_interaction_functions.h"
 extern "C" {
 #include <interface.h>
 }
@@ -18,44 +18,44 @@ int main(int argc, char** argv) {
 	// OUTPUT PORTS
 	createDigitalOutput(2);
 	printf("\ncallibrate kit manually and press enter...");
-	int tecla = 0;
+/*	int tecla = 0;
 	while (tecla != 27) {
 		tecla = _getch();
 		if (tecla == 'q') {
 			//printf("vai mover CylinderStart front");
-			moveCylinderFront(0); //0 -> cylinder 0
+			moveCylinderStartFront(); //0 -> cylinder 0
 		}
 		if (tecla == 'a') {
 			//printf("vai mover CylinderStart back");
-			moveCylinderBack(1); //1 -> cylinder 0
+			moveCylinderStartBack(); //1 -> cylinder 0
 		}
 		if (tecla == 'z') {
 			//printf("vai parar CylinderStart");
-			stopCylinder(0); //0 -> cylinder 0
+			stopCylinderStart(); //0 -> cylinder 0
 		}
 		if (tecla == 'w') {
 			//printf("vai mover Cylinder1 front");
-			moveCylinderFront(3); //3 -> cylinder 1
+			moveCylinder1Front(); //3 -> cylinder 1
 		}
 		if (tecla == 's') {
 			//printf("vai mover Cylinder2 back");
-			moveCylinderBack(4); //4 -> cylinder 1
+			moveCylinder1Back(); //4 -> cylinder 1
 		}
 		if (tecla == 'x') {
 			//printf("vai parar CylinderStart");
-			stopCylinder(3); //3 -> cylinder 1
+			stopCylinder1(); //3 -> cylinder 1
 		}
 		if (tecla == 'e') {
 			//printf("vai mover Cylinder1 front");
-			moveCylinderFront(5); //5 -> cylinder 2
+			moveCylinder2Front(); //5 -> cylinder 2
 		}
 		if (tecla == 'd') {
 			//printf("vai mover Cylinder2 back");
-			moveCylinderBack(6); //6 -> cylinder 2
+			moveCylinder2Back(); //6 -> cylinder 2
 		}
 		if (tecla == 'c') {
 			//printf("vai parar CylinderStart");
-			stopCylinder(5); //5 -> cylinder 2
+			stopCylinder2(); //5 -> cylinder 2
 		}
 		if (tecla == 'r') {
 			printf("goto back c0");
@@ -80,11 +80,13 @@ int main(int argc, char** argv) {
 		if (tecla == 'b') {
 			printf("goto front c2");
 			gotoCylinder2(1); //0 front pos
-		}						
+		}
 	}
+	*/
 	closeChannels();
-		return 0;
+	return 0;
 }
+
 // Executar programa: Ctrl + F5 ou Menu Depurar > Iniciar Sem Depuração
 // Depurar programa: F5 ou menu Depurar > Iniciar Depuração
 

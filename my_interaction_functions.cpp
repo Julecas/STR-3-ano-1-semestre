@@ -5,32 +5,80 @@
 
 //DONNE
 
-//NOTA:     MARTIM fiz os atuadores assim para não fazer 9 funções iguais (eles queriam coco basicamente)
+//NOTA:     MARTIM fiz os atuadores assim para n?o fazer 9 fun??es iguais (eles queriam coco basicamente)
 
 
-void stopCylinder(int bitChange) {
-	
+void stopCylinderStart() {
+
 	uInt8 p = readDigitalU8(2); // read port 2
-	setBitValue(&p, bitChange, 0); // set bit 0 to low level
-	setBitValue(&p, bitChange + 1, 0); // set bit 1 to low level
+	setBitValue(&p, 0, 0); // set bit 0 to low level
+	setBitValue(&p, 1, 0); // set bit 1 to low level
 	writeDigitalU8(2, p); // update port 2
 }
 
-void moveCylinderBack(int bitChange) {
-	
+void stopCylinder1() {
+
 	uInt8 p = readDigitalU8(2); // read port 2
-	setBitValue(&p, bitChange, 0); // set bit 1 to low level
-	setBitValue(&p, bitChange - 1, 1); // set bit 0 to high level
+	setBitValue(&p, 3, 0); // set bit 0 to low level
+	setBitValue(&p, 4, 0); // set bit 1 to low level
 	writeDigitalU8(2, p); // update port 2
 }
 
-void moveCylinderFront(int bitChange) {
-	
+void stopCylinder2() {
+
 	uInt8 p = readDigitalU8(2); // read port 2
-	setBitValue(&p, bitChange, 0); // set bit 0 to low level
-	setBitValue(&p, bitChange + 1, 1); // set bit 1 to high level
+	setBitValue(&p, 5, 0); // set bit 0 to low level
+	setBitValue(&p, 6, 0); // set bit 1 to low level
 	writeDigitalU8(2, p); // update port 2
 }
+
+void moveCylinderStartBack() {
+
+	uInt8 p = readDigitalU8(2); // read port 2
+	setBitValue(&p, 1, 0); // set bit 1 to low level
+	setBitValue(&p, 0, 1); // set bit 0 to high level
+	writeDigitalU8(2, p); // update port 2
+} 
+
+void moveCylinder1Back() {
+
+	uInt8 p = readDigitalU8(2); // read port 2
+	setBitValue(&p, 4, 0); // set bit 1 to low level
+	setBitValue(&p, 3, 1); // set bit 0 to high level
+	writeDigitalU8(2, p); // update port 2
+}
+
+void moveCylinder2Back() {
+
+	uInt8 p = readDigitalU8(2); // read port 2
+	setBitValue(&p, 6, 0); // set bit 1 to low level
+	setBitValue(&p, 5, 1); // set bit 0 to high level
+	writeDigitalU8(2, p); // update port 2
+}
+
+void moveCylinderStartFront() {
+
+	uInt8 p = readDigitalU8(2); // read port 2
+	setBitValue(&p, 0 , 0); // set bit 0 to low level
+	setBitValue(&p, 1, 1); // set bit 1 to high level
+	writeDigitalU8(2, p); // update port 2
+}
+
+void moveCylinder1Front() {
+
+	uInt8 p = readDigitalU8(2); // read port 2
+	setBitValue(&p, 3 , 0); // set bit 0 to low level
+	setBitValue(&p, 4, 1); // set bit 1 to high level
+	writeDigitalU8(2, p); // update port 2
+}
+void moveCylinder2Front() {
+
+	uInt8 p = readDigitalU8(2); // read port 2
+	setBitValue(&p, 5, 0); // set bit 0 to low level
+	setBitValue(&p, 6, 1); // set bit 1 to high level
+	writeDigitalU8(2, p); // update port 2
+}
+
 
 int getCylinderStartPos() {
 	//cylinder 0 sensor
@@ -52,7 +100,7 @@ int getCylinder1Pos() { //DONNE
 
 }
 int getCylinder2Pos() {
-	
+
 	uInt8 p0 = readDigitalU8(0);
 	if (!getBitValue(p0, 2)) //back
 		return 0;
@@ -73,23 +121,23 @@ void setBitValue(uInt8* variable, int n_bit, int new_value_bit) {
 }
 
 void gotoCylinderStart(int pos) {
-	
+
 	//back (end goal)
 	if (pos == 0) {
 		while (getCylinderStartPos() != 0) {
-	
-			moveCylinderBack(1); //cylinder 0
+
+			moveCylinderStartBack(); //cylinder 0
 		}
-		stopCylinder(0);
+		stopCylinderStart();
 		return;
 	}
 	//front (end goal)
 	if (pos == 1) {
 		while (getCylinderStartPos() != 1) {
 
-			moveCylinderFront(0); //cylinder 0
+			moveCylinderStartFront(); //cylinder 0
 		}
-		stopCylinder(0);
+		stopCylinderStart();
 		return;
 	}
 
@@ -101,18 +149,18 @@ void gotoCylinder1(int pos) {
 	if (pos == 0) {
 		while (getCylinder1Pos() != 0) {
 
-			moveCylinderBack(4); //cylinder 1
+			moveCylinder1Back(); //cylinder 1
 		}
-		stopCylinder(3);
+		stopCylinder1();
 		return;
 	}
 	//front (end goal)
 	if (pos == 1) {
 		while (getCylinder1Pos() != 1) {
 
-				moveCylinderFront(3); //cylinder 1
+			moveCylinder1Front(); //cylinder 1
 		}
-		stopCylinder(3);
+		stopCylinder1();
 		return;
 	}
 
@@ -124,22 +172,22 @@ void gotoCylinder2(int pos) {
 	if (pos == 0) {
 		while (getCylinder2Pos() != 0) {
 
-				moveCylinderBack(6); //cylinder 2
+			moveCylinder2Back(); //cylinder 2
 		}
-		stopCylinder(5);
+		stopCylinder2();
 		return;
 	}
 	//front (end goal)
 	if (pos == 1) {
 		while (getCylinder2Pos() != 1) {
 
-				moveCylinderFront(5); //cylinder 2
+			moveCylinder2Front(); //cylinder 2
 		}
-		stopCylinder(5);
+		stopCylinder2();
 		return;
 	}
 
 }
 
 
-// put here all function's implementations
+// put here all function's implementationss
