@@ -1,11 +1,19 @@
 #include "my_interaction_functions.h"
-#include <windows.h> //for Sleep function
 #include <mongoose.h>
 
 
-//DONNE
+void calibrateCylinder1() {
 
-//NOTA:     MARTIM fiz os atuadores assim para n?o fazer 9 fun??es iguais (eles queriam coco basicamente)
+	gotoCylinder1(1);
+	gotoCylinder1(0);
+}
+
+void calibrateCylinder2() {
+
+	gotoCylinder2(1);
+	gotoCylinder2(0);
+
+}
 
 
 void stopCylinderStart() {
@@ -38,7 +46,7 @@ void moveCylinderStartBack() {
 	setBitValue(&p, 1, 0); // set bit 1 to low level
 	setBitValue(&p, 0, 1); // set bit 0 to high level
 	writeDigitalU8(2, p); // update port 2
-} 
+}
 
 void moveCylinder1Back() {
 
@@ -59,7 +67,7 @@ void moveCylinder2Back() {
 void moveCylinderStartFront() {
 
 	uInt8 p = readDigitalU8(2); // read port 2
-	setBitValue(&p, 0 , 0); // set bit 0 to low level
+	setBitValue(&p, 0, 0); // set bit 0 to low level
 	setBitValue(&p, 1, 1); // set bit 1 to high level
 	writeDigitalU8(2, p); // update port 2
 }
@@ -67,7 +75,7 @@ void moveCylinderStartFront() {
 void moveCylinder1Front() {
 
 	uInt8 p = readDigitalU8(2); // read port 2
-	setBitValue(&p, 3 , 0); // set bit 0 to low level
+	setBitValue(&p, 3, 0); // set bit 0 to low level
 	setBitValue(&p, 4, 1); // set bit 1 to high level
 	writeDigitalU8(2, p); // update port 2
 }
@@ -124,18 +132,20 @@ void gotoCylinderStart(int pos) {
 
 	//back (end goal)
 	if (pos == 0) {
+		
+		moveCylinderStartBack(); //cylinder 0
 		while (getCylinderStartPos() != 0) {
-
-			moveCylinderStartBack(); //cylinder 0
+			continue;
 		}
 		stopCylinderStart();
 		return;
 	}
 	//front (end goal)
 	if (pos == 1) {
-		while (getCylinderStartPos() != 1) {
 
-			moveCylinderStartFront(); //cylinder 0
+		moveCylinderStartFront(); //cylinder 0
+		while (getCylinderStartPos() != 1) {
+			continue;
 		}
 		stopCylinderStart();
 		return;
@@ -147,18 +157,20 @@ void gotoCylinder1(int pos) {
 
 	//back (end goal)
 	if (pos == 0) {
-		while (getCylinder1Pos() != 0) {
 
-			moveCylinder1Back(); //cylinder 1
+		moveCylinder1Back(); //cylinder 1
+		while (getCylinder1Pos() != 0) {
+			continue;
 		}
 		stopCylinder1();
 		return;
 	}
 	//front (end goal)
 	if (pos == 1) {
-		while (getCylinder1Pos() != 1) {
 
-			moveCylinder1Front(); //cylinder 1
+		moveCylinder1Front(); //cylinder 1
+		while (getCylinder1Pos() != 1){
+			continue;
 		}
 		stopCylinder1();
 		return;
@@ -170,18 +182,20 @@ void gotoCylinder2(int pos) {
 
 	//back (end goal)
 	if (pos == 0) {
-		while (getCylinder2Pos() != 0) {
 
-			moveCylinder2Back(); //cylinder 2
+		moveCylinder2Back(); //cylinder 2
+		while (getCylinder2Pos() != 0) {
+			continue;
 		}
 		stopCylinder2();
 		return;
 	}
 	//front (end goal)
+	
+	moveCylinder2Front(); //cylinder 2
 	if (pos == 1) {
 		while (getCylinder2Pos() != 1) {
-
-			moveCylinder2Front(); //cylinder 2
+			continue;
 		}
 		stopCylinder2();
 		return;

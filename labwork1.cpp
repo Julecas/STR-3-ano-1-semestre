@@ -5,9 +5,11 @@
 #include<stdlib.h>
 #include <windows.h> //for Sleep function
 #include <stdio.h>
-//#include "my_interaction_functions.h"
+#include <my_interaction_functions.h>
+
 extern "C" {
 #include <interface.h>
+
 }
 
 
@@ -18,71 +20,76 @@ int main(int argc, char** argv) {
 	// OUTPUT PORTS
 	createDigitalOutput(2);
 	printf("\ncallibrate kit manually and press enter...");
-/*	int tecla = 0;
-	while (tecla != 27) {
-		tecla = _getch();
-		if (tecla == 'q') {
-			//printf("vai mover CylinderStart front");
-			moveCylinderStartFront(); //0 -> cylinder 0
+	
+	//calibrate cylinders
+	calibrateCylinder1();
+	calibrateCylinder2();
+
+	int tecla = 0;
+		while (tecla != 27) {
+			tecla = _getch();
+			if (tecla == 'q') {
+				//printf("vai mover CylinderStart front");
+				moveCylinderStartFront(); //0 -> cylinder 0
+			}
+			if (tecla == 'a') {
+				//printf("vai mover CylinderStart back");
+				moveCylinderStartBack(); //1 -> cylinder 0
+			}
+			if (tecla == 'z') {
+				//printf("vai parar CylinderStart");
+				stopCylinderStart(); //0 -> cylinder 0
+			}
+			if (tecla == 'w') {
+				//printf("vai mover Cylinder1 front");
+				moveCylinder1Front(); //3 -> cylinder 1
+			}
+			if (tecla == 's') {
+				//printf("vai mover Cylinder2 back");
+				moveCylinder1Back(); //4 -> cylinder 1
+			}
+			if (tecla == 'x') {
+				//printf("vai parar CylinderStart");
+				stopCylinder1(); //3 -> cylinder 1
+			}
+			if (tecla == 'e') {
+				//printf("vai mover Cylinder1 front");
+				moveCylinder2Front(); //5 -> cylinder 2
+			}
+			if (tecla == 'd') {
+				//printf("vai mover Cylinder2 back");
+				moveCylinder2Back(); //6 -> cylinder 2
+			}
+			if (tecla == 'c') {
+				//printf("vai parar CylinderStart");
+				stopCylinder2(); //5 -> cylinder 2
+			}
+			if (tecla == 'r') {
+				printf("goto back c0");
+				gotoCylinderStart(0); //0 back pos
+			}
+			if (tecla == 't') {
+				printf("goto front c0");
+				gotoCylinderStart(1); //0 front pos
+			}
+			if (tecla == 'f') {
+				printf("goto back c1");
+				gotoCylinder1(0); //0 back pos
+			}
+			if (tecla == 'g') {
+				printf("goto front c1");
+				gotoCylinder1(1); //0 front pos
+			}
+			if (tecla == 'v') {
+				printf("goto back c2");
+				gotoCylinder2(0); //0 back pos
+			}
+			if (tecla == 'b') {
+				printf("goto front c2");
+				gotoCylinder2(1); //0 front pos
+			}
 		}
-		if (tecla == 'a') {
-			//printf("vai mover CylinderStart back");
-			moveCylinderStartBack(); //1 -> cylinder 0
-		}
-		if (tecla == 'z') {
-			//printf("vai parar CylinderStart");
-			stopCylinderStart(); //0 -> cylinder 0
-		}
-		if (tecla == 'w') {
-			//printf("vai mover Cylinder1 front");
-			moveCylinder1Front(); //3 -> cylinder 1
-		}
-		if (tecla == 's') {
-			//printf("vai mover Cylinder2 back");
-			moveCylinder1Back(); //4 -> cylinder 1
-		}
-		if (tecla == 'x') {
-			//printf("vai parar CylinderStart");
-			stopCylinder1(); //3 -> cylinder 1
-		}
-		if (tecla == 'e') {
-			//printf("vai mover Cylinder1 front");
-			moveCylinder2Front(); //5 -> cylinder 2
-		}
-		if (tecla == 'd') {
-			//printf("vai mover Cylinder2 back");
-			moveCylinder2Back(); //6 -> cylinder 2
-		}
-		if (tecla == 'c') {
-			//printf("vai parar CylinderStart");
-			stopCylinder2(); //5 -> cylinder 2
-		}
-		if (tecla == 'r') {
-			printf("goto back c0");
-			gotoCylinderStart(0); //0 back pos
-		}
-		if (tecla == 't') {
-			printf("goto front c0");
-			gotoCylinderStart(1); //0 front pos
-		}
-		if (tecla == 'f') {
-			printf("goto back c1");
-			gotoCylinder1(0); //0 back pos
-		}
-		if (tecla == 'g') {
-			printf("goto front c1");
-			gotoCylinder1(1); //0 front pos
-		}
-		if (tecla == 'v') {
-			printf("goto back c2");
-			gotoCylinder2(0); //0 back pos
-		}
-		if (tecla == 'b') {
-			printf("goto front c2");
-			gotoCylinder2(1); //0 front pos
-		}
-	}
-	*/
+		
 	closeChannels();
 	return 0;
 }
