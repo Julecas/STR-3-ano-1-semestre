@@ -13,12 +13,12 @@ void setBitValue(uInt8* variable, int n_bit, int new_value_bit);
 // CylinderStart related functions
 
 /******************************************************************************************************************************
-* moveCylinderStartFront - function that moves to front cylinder 0
+* moveCylinderStartFront - function that moves to front cylinder 0 
 *******************************************************************************************************************************/
 void moveCylinderStartFront();
 
 /******************************************************************************************************************************
-* moveCylinderStartBack - function that moves back cylinder 0
+* moveCylinderStartBack - function that moves back cylinder 0 
 *******************************************************************************************************************************/
 void moveCylinderStartBack();
 
@@ -37,26 +37,24 @@ int  getCylinderStartPos();
 void gotoCylinderStart(int pos);
 
 /******************************************************************************************************************************
-* stopCylinderStart - function that stops a cylinder , stops cylinder 0
+* stopCylinderStart - function that stops a cylinder , stops cylinder 0 
 *******************************************************************************************************************************/
 void stopCylinderStart();
 
 // Cylinder1 related functions
 
-void calibrateCylinder1();
-
 /******************************************************************************************************************************
-* moveCylinder1Front - function that moves to front cylinder 1
+* moveCylinder1Front - function that moves to front cylinder 1 
 *******************************************************************************************************************************/
 void moveCylinder1Front();
 
 /******************************************************************************************************************************
-* moveCylinder1Back - function that moves back cylinder 1
+* moveCylinder1Back - function that moves back cylinder 1 
 *******************************************************************************************************************************/
 void moveCylinder1Back();
 
 /******************************************************************************************************************************
-* stopCylinder1 - function that stops a cylinder , stops cylinder 1
+* stopCylinder1 - function that stops a cylinder , stops cylinder 1 
 *******************************************************************************************************************************/
 void stopCylinder1();
 
@@ -76,8 +74,6 @@ int  getCylinder1Pos();
 void gotoCylinder1(int pos);
 
 // Cylinder2 related functions
-
-void calibrateCylinder2();
 
 /******************************************************************************************************************************
 * moveCylinder(n)Front - function that moves to front cylinder 0 , 1 or 2
@@ -108,5 +104,23 @@ int  getCylinder2Pos();
 * pos = 0 (place cylinder in back position) / pos = 1 (place cylinder in front position)
 *******************************************************************************************************************************/
 void gotoCylinder2(int pos);
+
+
+/******************************************************************************************************************************
+* ConveyorOff- function that stops the Conveyor belt
+*******************************************************************************************************************************/
+void ConveyorOff();
+
+
+/******************************************************************************************************************************
+* ConveyorOn- function that starts the Conveyor belt
+*******************************************************************************************************************************/
+void ConveyorOn();
+
+/******************************************************************************************************************************
+* ReadTypeBlock- function that returns type of block
+*******************************************************************************************************************************/
+uInt8 ReadTypeBlock();
+
 
 // Put here the other function headers!!!

@@ -1,6 +1,8 @@
 #include "my_interaction_functions.h"
 #include <mongoose.h>
 
+void Conveyor(bool b);
+
 
 void calibrateCylinder1() {
 
@@ -132,7 +134,7 @@ void gotoCylinderStart(int pos) {
 
 	//back (end goal)
 	if (pos == 0) {
-		
+
 		moveCylinderStartBack(); //cylinder 0
 		while (getCylinderStartPos() != 0) {
 			continue;
@@ -169,7 +171,7 @@ void gotoCylinder1(int pos) {
 	if (pos == 1) {
 
 		moveCylinder1Front(); //cylinder 1
-		while (getCylinder1Pos() != 1){
+		while (getCylinder1Pos() != 1) {
 			continue;
 		}
 		stopCylinder1();
@@ -191,7 +193,7 @@ void gotoCylinder2(int pos) {
 		return;
 	}
 	//front (end goal)
-	
+
 	moveCylinder2Front(); //cylinder 2
 	if (pos == 1) {
 		while (getCylinder2Pos() != 1) {
@@ -203,5 +205,41 @@ void gotoCylinder2(int pos) {
 
 }
 
+
+// put here all function's implementationss
+
+
+void ConveyorOn(){
+	Conveyor(true);
+}
+
+void ConveyorOff() {
+	Conveyor(false);
+}
+
+//True	on
+//False off
+void Conveyor(bool b) {
+
+	//int n = b ? 1 : 0;
+	uInt8 p = readDigitalU8(2); // read port 2
+	setBitValue(&p, 2, b); 
+	writeDigitalU8(2, p); 
+
+}
+
+uInt8 ReadTypeBlock(){
+
+	uInt8 c = 0,
+		 p1 = readDigitalU8(1);
+
+	while ( /*Enquanto for */ ) {
+	
+		p1 &= 01100000;
+		c  |= p1;
+
+	}
+	return c;
+}
 
 // put here all function's implementationss
