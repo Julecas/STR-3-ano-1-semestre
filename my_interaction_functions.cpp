@@ -235,7 +235,7 @@ uInt8 ReadTypeBlock(){
 
 	while ( /*Enquanto for */ ) {
 	
-		p1 &= 01100000;
+		p1 &= 0b01100000;
 		c  |= p1;
 
 	}
