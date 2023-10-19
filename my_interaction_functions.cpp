@@ -12,6 +12,10 @@ extern "C" {
 #include <interrupts.h>
 }
 
+
+void Conveyor(bool b);
+void moveCylinder(int port, int bitF, bool Fv, int bitB, bool Fb);
+
 void ledReject() {
 	uInt8 p = readDigitalU8(2); // read port 2
 	
@@ -21,6 +25,7 @@ void ledReject() {
 	setBitValue(&p, 7, 0);
 	}
 }
+
 
 void calibrateCylinder1() {
 
@@ -38,85 +43,59 @@ void calibrateCylinder2() {
 
 void stopCylinderStart() {
 
-	uInt8 p = readDigitalU8(2); // read port 2
-	setBitValue(&p, 0, 0); // set bit 0 to low level
-	setBitValue(&p, 1, 0); // set bit 1 to low level
-	writeDigitalU8(2, p); // update port 2
+	moveCylinder(2, 0, 0, 1, 0);
 }
 
 void stopCylinder1() {
 
-	uInt8 p = readDigitalU8(2); // read port 2
-	setBitValue(&p, 3, 0); // set bit 0 to low level
-	setBitValue(&p, 4, 0); // set bit 1 to low level
-	writeDigitalU8(2, p); // update port 2
+	moveCylinder(2, 3, 0, 4, 0);
 }
 
 void stopCylinder2() {
 
-	uInt8 p = readDigitalU8(2); // read port 2
-	setBitValue(&p, 5, 0); // set bit 0 to low level
-	setBitValue(&p, 6, 0); // set bit 1 to low level
-	writeDigitalU8(2, p); // update port 2
+	moveCylinder(2, 5, 0, 6, 0); //aqui
 }
 
 void moveCylinderStartBack() {
 
-	//taskENTER_CRITICAL();;
-	uInt8 p = readDigitalU8(2); // read port 2
-	setBitValue(&p, 1, 0); // set bit 1 to low level
-	setBitValue(&p, 0, 1); // set bit 0 to high level
-	writeDigitalU8(2, p); // update port 2
-	//taskEXIT_CRITICAL();
+	moveCylinder(2, 1, 0, 0, 1);
 }
 
 void moveCylinder1Back() {
 
-	//taskENTER_CRITICAL();
-	uInt8 p = readDigitalU8(2); // read port 2
-	setBitValue(&p, 4, 0); // set bit 1 to low level
-	setBitValue(&p, 3, 1); // set bit 0 to high level
-	writeDigitalU8(2, p); // update port 2
-	//taskEXIT_CRITICAL();
+	moveCylinder(2, 4, 0, 3, 1);
 }
 
 void moveCylinder2Back() {
 
-	//taskENTER_CRITICAL();
-	uInt8 p = readDigitalU8(2); // read port 2
-	setBitValue(&p, 6, 0); // set bit 1 to low level
-	setBitValue(&p, 5, 1); // set bit 0 to high level
-	writeDigitalU8(2, p); // update port 2
-	//taskEXIT_CRITICAL();
+	moveCylinder(2, 6, 0, 5, 1);
 }
 
 void moveCylinderStartFront() {
 
-	//taskENTER_CRITICAL();
-	uInt8 p = readDigitalU8(2); // read port 2
-	setBitValue(&p, 0, 0); // set bit 0 to low level
-	setBitValue(&p, 1, 1); // set bit 1 to high level
-	writeDigitalU8(2, p); // update port 2
-	//taskEXIT_CRITICAL();
+	moveCylinder(2, 0, 0, 1, 1);
 }
 
 void moveCylinder1Front() {
 
-	//taskENTER_CRITICAL();
-	uInt8 p = readDigitalU8(2); // read port 2
-	setBitValue(&p, 3, 0); // set bit 0 to low level
-	setBitValue(&p, 4, 1); // set bit 1 to high level
-	writeDigitalU8(2, p); // update port 2
-	//taskEXIT_CRITICAL();
+	moveCylinder(2, 3, 0, 4, 1);
+
 }
 void moveCylinder2Front() {
 
-	//taskENTER_CRITICAL();
-	uInt8 p = readDigitalU8(2); // read port 2
-	setBitValue(&p, 5, 0); // set bit 0 to low level
-	setBitValue(&p, 6, 1); // set bit 1 to high level
-	writeDigitalU8(2, p); // update port 2
-	//taskEXIT_CRITICAL();
+	moveCylinder(2, 5, 0, 6, 1);
+
+}
+
+
+void moveCylinder(int port, int bitF, bool Fv, int bitB, bool Fb) {
+
+	taskENTER_CRITICAL();
+	uInt8 p = readDigitalU8(port); // read port 
+	setBitValue(&p, bitF, Fv);	  // Move front 
+	setBitValue(&p, bitB, Fb);   // Move back
+	writeDigitalU8(port, p);    // update port
+	taskEXIT_CRITICAL();
 }
 
 
@@ -234,6 +213,52 @@ void gotoCylinder2(int pos) {
 	}
 
 }
+
+
+void ConveyorOn() {
+	Conveyor(true);
+}
+
+void ConveyorOff() {
+	Conveyor(false);
+}
+
+//True	on
+//False off
+void Conveyor(bool b) {
+
+	//int n = b ? 1 : 0;
+	//task critic
+	taskENTER_CRITICAL();
+	uInt8 p = readDigitalU8(2); // read port 2
+	setBitValue(&p, 2, b);
+	writeDigitalU8(2, p);
+	taskEXIT_CRITICAL();
+
+}
+
+
+uInt8 ReadTypeBlock() {
+
+	uInt8 p1,
+		c = 0,
+		p2 = readDigitalU8(0);
+	moveCylinderStartFront(); //cylinder 0
+
+	while (p2 | 0b11011111 && getCylinderStartPos() != 1 ) {
+
+		p2 = readDigitalU8(0);
+		p1 = readDigitalU8(1);
+		p1 &= 0b01100000;
+		c |= p1;
+
+	}
+
+	gotoCylinderStart(0);
+	return c;
+
+}
+
 
 void cylinderTest() {
 	int tecla = 0;

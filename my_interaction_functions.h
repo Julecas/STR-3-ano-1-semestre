@@ -3,6 +3,10 @@
 extern "C" {
 #include <interface.h>
 }
+#define Block1 0x0
+#define Block2 0b01000000
+#define Block3 0b01100000
+
 
 // given a byte value, returns the value of its bit n
 int getBitValue(uInt8 value, uInt8 bit_n);
@@ -10,15 +14,19 @@ int getBitValue(uInt8 value, uInt8 bit_n);
 // given a byte value, set the n bit to value
 void setBitValue(uInt8* variable, int n_bit, int new_value_bit);
 
+// Led related functions
+
+void ledReject();
+
 // CylinderStart related functions
 
 /******************************************************************************************************************************
-* moveCylinderStartFront - function that moves to front cylinder 0 
+* moveCylinderStartFront - function that moves to front cylinder 0
 *******************************************************************************************************************************/
 void moveCylinderStartFront();
 
 /******************************************************************************************************************************
-* moveCylinderStartBack - function that moves back cylinder 0 
+* moveCylinderStartBack - function that moves back cylinder 0
 *******************************************************************************************************************************/
 void moveCylinderStartBack();
 
@@ -37,24 +45,26 @@ int  getCylinderStartPos();
 void gotoCylinderStart(int pos);
 
 /******************************************************************************************************************************
-* stopCylinderStart - function that stops a cylinder , stops cylinder 0 
+* stopCylinderStart - function that stops a cylinder , stops cylinder 0
 *******************************************************************************************************************************/
 void stopCylinderStart();
 
 // Cylinder1 related functions
 
+void calibrateCylinder1();
+
 /******************************************************************************************************************************
-* moveCylinder1Front - function that moves to front cylinder 1 
+* moveCylinder1Front - function that moves to front cylinder 1
 *******************************************************************************************************************************/
 void moveCylinder1Front();
 
 /******************************************************************************************************************************
-* moveCylinder1Back - function that moves back cylinder 1 
+* moveCylinder1Back - function that moves back cylinder 1
 *******************************************************************************************************************************/
 void moveCylinder1Back();
 
 /******************************************************************************************************************************
-* stopCylinder1 - function that stops a cylinder , stops cylinder 1 
+* stopCylinder1 - function that stops a cylinder , stops cylinder 1
 *******************************************************************************************************************************/
 void stopCylinder1();
 
@@ -74,6 +84,8 @@ int  getCylinder1Pos();
 void gotoCylinder1(int pos);
 
 // Cylinder2 related functions
+
+void calibrateCylinder2();
 
 /******************************************************************************************************************************
 * moveCylinder(n)Front - function that moves to front cylinder 0 , 1 or 2
@@ -105,7 +117,6 @@ int  getCylinder2Pos();
 *******************************************************************************************************************************/
 void gotoCylinder2(int pos);
 
-
 /******************************************************************************************************************************
 * ConveyorOff- function that stops the Conveyor belt
 *******************************************************************************************************************************/
@@ -122,5 +133,7 @@ void ConveyorOn();
 *******************************************************************************************************************************/
 uInt8 ReadTypeBlock();
 
-
+//DEBUG
 // Put here the other function headers!!!
+
+void cylinderTest();
