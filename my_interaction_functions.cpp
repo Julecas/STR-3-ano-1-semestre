@@ -20,75 +20,60 @@ void calibrateCylinder2() {
 
 void stopCylinderStart() {
 
-	uInt8 p = readDigitalU8(2); // read port 2
-	setBitValue(&p, 0, 0); // set bit 0 to low level
-	setBitValue(&p, 1, 0); // set bit 1 to low level
-	writeDigitalU8(2, p); // update port 2
+	moveCylinder(2, 0, 0, 1, 0);
 }
 
 void stopCylinder1() {
 
-	uInt8 p = readDigitalU8(2); // read port 2
-	setBitValue(&p, 3, 0); // set bit 0 to low level
-	setBitValue(&p, 4, 0); // set bit 1 to low level
-	writeDigitalU8(2, p); // update port 2
+	moveCylinder(2, 3, 0, 4, 0);
 }
 
 void stopCylinder2() {
 
-	uInt8 p = readDigitalU8(2); // read port 2
-	setBitValue(&p, 5, 0); // set bit 0 to low level
-	setBitValue(&p, 6, 0); // set bit 1 to low level
-	writeDigitalU8(2, p); // update port 2
+	moveCylinder( 1,5,0,6,0 );
 }
 
 void moveCylinderStartBack() {
 
-	uInt8 p = readDigitalU8(2); // read port 2
-	setBitValue(&p, 1, 0); // set bit 1 to low level
-	setBitValue(&p, 0, 1); // set bit 0 to high level
-	writeDigitalU8(2, p); // update port 2
+	moveCylinder(2, 1, 0, 0, 1);
 }
 
 void moveCylinder1Back() {
 
-	uInt8 p = readDigitalU8(2); // read port 2
-	setBitValue(&p, 4, 0); // set bit 1 to low level
-	setBitValue(&p, 3, 1); // set bit 0 to high level
-	writeDigitalU8(2, p); // update port 2
+	moveCylinder(2, 4, 0, 3, 1);
 }
 
 void moveCylinder2Back() {
 
-	uInt8 p = readDigitalU8(2); // read port 2
-	setBitValue(&p, 6, 0); // set bit 1 to low level
-	setBitValue(&p, 5, 1); // set bit 0 to high level
-	writeDigitalU8(2, p); // update port 2
+	moveCylinder(2,6,0,5,1);
 }
 
 void moveCylinderStartFront() {
 
-	uInt8 p = readDigitalU8(2); // read port 2
-	setBitValue(&p, 0, 0); // set bit 0 to low level
-	setBitValue(&p, 1, 1); // set bit 1 to high level
-	writeDigitalU8(2, p); // update port 2
+	moveCylinder(2,0,0,1,1);
 }
 
 void moveCylinder1Front() {
 
-	uInt8 p = readDigitalU8(2); // read port 2
-	setBitValue(&p, 3, 0); // set bit 0 to low level
-	setBitValue(&p, 4, 1); // set bit 1 to high level
-	writeDigitalU8(2, p); // update port 2
+	moveCylinder( 2,3,0,4,1);
+
 }
 void moveCylinder2Front() {
+	
+	moveCylinder(2,5,0,6,1);
 
-	uInt8 p = readDigitalU8(2); // read port 2
-	setBitValue(&p, 5, 0); // set bit 0 to low level
-	setBitValue(&p, 6, 1); // set bit 1 to high level
-	writeDigitalU8(2, p); // update port 2
 }
 
+
+void moveCylinder(int port,int bitF,bool Fv,int bitB,bool Fb) {
+
+	taskENTER_CRITICAL();
+	uInt8 p = readDigitalU8(port); // read port 
+	setBitValue(&p, bitF, Fv);	  // Move front 
+	setBitValue(&p, bitB, Fb);   // Move back
+	writeDigitalU8(port, p);    // update port
+	taskEXIT_CRITICAL();
+}
 
 int getCylinderStartPos() {
 	//cylinder 0 sensor
@@ -222,24 +207,31 @@ void ConveyorOff() {
 void Conveyor(bool b) {
 
 	//int n = b ? 1 : 0;
+	//task critic
+	taskENTER_CRITICAL();
 	uInt8 p = readDigitalU8(2); // read port 2
 	setBitValue(&p, 2, b); 
-	writeDigitalU8(2, p); 
+	writeDigitalU8(2, p);
+	taskEXIT_CRITICAL();
 
 }
 
 uInt8 ReadTypeBlock(){
 
-	uInt8 c = 0,
-		 p1 = readDigitalU8(1);
+	uInt8 p1,
+		  c  = 0,
+		  p2 = readDigitalU8(0);
 
-	while ( /*Enquanto for */ ) {
-	
+	while ( p2 | 0b11011111 ) {
+
+		p2 = readDigitalU8(0);
+		p1 = readDigitalU8(1);
 		p1 &= 0b01100000;
 		c  |= p1;
 
 	}
 	return c;
+
 }
 
 // put here all function's implementationss
