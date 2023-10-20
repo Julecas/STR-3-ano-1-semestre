@@ -16,7 +16,8 @@ void setBitValue(uInt8* variable, int n_bit, int new_value_bit);
 
 // Led related functions
 
-void ledReject();
+void ledRejectOff();
+void ledRejectOn();
 
 // CylinderStart related functions
 

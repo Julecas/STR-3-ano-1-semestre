@@ -16,15 +16,24 @@ extern "C" {
 void Conveyor(bool b);
 void moveCylinder(int port, int bitF, bool Fv, int bitB, bool Fb);
 
-void ledReject() {
+void ledRejectOn() {
+
+	//taskENTER_CRITICAL();
 	uInt8 p = readDigitalU8(2); // read port 2
-	
-	while(true){ //semaphoro
 	setBitValue(&p, 7, 1); 
-	sleep(500);
-	setBitValue(&p, 7, 0);
-	}
+	writeDigitalU8(2, p);
+	//taskEXIT_CRITICAL();
 }
+
+void ledRejectOff() {
+
+	//taskENTER_CRITICAL();
+	uInt8 p = readDigitalU8(2); // read port 2
+	setBitValue(&p, 7, 0);
+	writeDigitalU8(2, p);
+	//taskEXIT_CRITICAL();
+}
+
 
 
 void calibrateCylinder1() {
@@ -243,7 +252,7 @@ uInt8 ReadTypeBlock() {
 	uInt8 p1,
 		c = 0,
 		p2 = readDigitalU8(0);
-	moveCylinderStartFront(); //cylinder 0
+	//moveCylinderStartFront(); //cylinder 0
 
 	while (p2 | 0b11011111 && getCylinderStartPos() != 1 ) {
 
@@ -254,7 +263,7 @@ uInt8 ReadTypeBlock() {
 
 	}
 
-	gotoCylinderStart(0);
+	//gotoCylinderStart(0);
 	return c;
 
 }

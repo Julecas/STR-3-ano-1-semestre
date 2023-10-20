@@ -1,6 +1,7 @@
 // labwork1.cpp : Este arquivo contém a função 'main'. A execução do programa começa e termina ali.
 //
 
+#include <time.h>
 #include<conio.h>
 #include<stdlib.h>
 #include <windows.h> //for Sleep function
@@ -21,27 +22,24 @@ extern "C" {
 #define mainREGION_2_SIZE   29905
 #define mainREGION_3_SIZE   7607
 
-uInt8 bloquinho;
+#define Block1 0x0
+#define Block2 0b01000000
+#define Block3 0b01100000
 
+//variaveis globais 
+uInt8 blockType = {};
+uInt8  blockInputBit = {};
+int blockInput = 0;
 
 //Semaphores and Mailboxes declaration
 xSemaphoreHandle sem_cylinder_start_start;
 xSemaphoreHandle sem_cylinder_start_finished;
 xQueueHandle mbx_check_package;
 xSemaphoreHandle sem_check_package_start;
-
-
-typedef struct part {
-	char package_ref[50];
-	int destination;
-} Part;
+xSemaphoreHandle sem_led_reject;
 
 
 
-
-void task_gotoCylinderStart(void* pvParameters);
-void task_gotoCylinder1(void* pvParameters);
-void task_gotoCylinder2(void* pvParameters);
 void vAssertCalled(unsigned long ulLine, const char* const pcFileName);
 static void  initialiseHeap(void);
 void inicializarPortos();
@@ -50,27 +48,24 @@ void myTickHook(void);
 void myIdleHook(void);
 void vTask_calibrate_cilinder1(void* pvParameters);
 void vTask_calibrate_cilinder2(void* pvParameters);
-void vTask_getblock(void* pvParameters);
-
-//test
 void check_package_task(void* pvParameters);
 void enter_package_task(void* pvParameters);
 void cylinder_start_task(void* pvParameters);
+void vTask_TurnRejectLedOn(void* pvParameters);
+
+//test
+void vTask_ConveyorOn(void* pvParameters);
 
 
 int main(int argc, char** argv) {
 
-	Sleep(3000);
-	printf("started");
-
-
+	Sleep(2000);
 	initialiseHeap();
 	vApplicationDaemonTaskStartupHook = &myDaemonTaskStartupHook;
 	
-
 	//vApplicationTickHook              = &myTickHook;
 	//vApplicationIdleHook              = &myIdleHook;
-	//Sleep(3000);
+
 	vTaskStartScheduler();
 
 	closeChannels();
@@ -78,34 +73,53 @@ int main(int argc, char** argv) {
 }
 
 void myDaemonTaskStartupHook(void) {
+
 	
 	sem_cylinder_start_start = xSemaphoreCreateCounting(10, 0);
 	sem_check_package_start = xSemaphoreCreateCounting(10, 0);
 	sem_cylinder_start_finished = xSemaphoreCreateCounting(10, 0);
 	mbx_check_package = xQueueCreate(10, sizeof(int));
+	sem_led_reject = xSemaphoreCreateBinary();
 
 	inicializarPortos();
 	
-	xTaskCreate(vTask_calibrate_cilinder1, "Clibrate Cylinder1 Task", 100, NULL, 0, NULL);
-	xTaskCreate(vTask_calibrate_cilinder2, "Clibrate Cylinder2 Task", 100, NULL, 0, NULL);
+	//cylinder calibration tasks
+	//xTaskCreate(vTask_calibrate_cilinder1, "Clibrate Cylinder1 Task", 100, NULL, 0, NULL);
+	//xTaskCreate(vTask_calibrate_cilinder2, "Clibrate Cylinder2 Task", 100, NULL, 0, NULL);
 
-	//xTaskCreate(vTask_getblock, "Read Block Task", 100, NULL, 0, NULL);
-	//xTaskCreate(task_gotoCylinderStart, "Move CylinderStartFront Task", 100, NULL, 0, NULL);
+	//led task
+	xTaskCreate(vTask_TurnRejectLedOn, "Turn Led On Task", 100, NULL, 0, NULL);
 
-	//juntar isto com a tua função martim
+	//conveyor task
+	xTaskCreate(vTask_ConveyorOn, "Conveyor On Task", 100, NULL, 0, NULL);
+
+	//brick input and verification tasks
 	xTaskCreate(cylinder_start_task, "Cylinder Start Task", 100, NULL, 0, NULL);
 	xTaskCreate(check_package_task, "Check package Task", 100, NULL, 0, NULL);
 	xTaskCreate(enter_package_task, "Enter Package Task", 100, NULL, 0, NULL);
+
 }
 
-void cylinder_start_task(void* pvParameters) {
-	while (TRUE) {
-		xQueueSemaphoreTake(sem_cylinder_start_start,
-			portMAX_DELAY);
-		gotoCylinderStart(1);
-		xSemaphoreGive(sem_cylinder_start_finished);
-		gotoCylinderStart(0);
+void vTask_TurnRejectLedOn(void* pvParameters) {
+	
+	
+	xSemaphoreTake(sem_cylinder_start_start,portMAX_DELAY);//xSemaphoreTake(sem_led_reject,portMAX_DELAY);
+	//waits for task completion
+	time_t secs = 3; //for de 3 segundos
+	time_t startTime = time(NULL);
+
+	while (time(NULL) - startTime < secs) {
+
+		ledRejectOn();
+		vTaskDelay(250);//ms
+		ledRejectOff();
+		vTaskDelay(250);//ms
 	}
+
+}
+
+void vTask_ConveyorOn(void* pvParameters) {
+	ConveyorOn();
 }
 
 void vTask_calibrate_cilinder1(void* pvParameters) {
@@ -116,60 +130,56 @@ void vTask_calibrate_cilinder2(void* pvParameters) {
 	calibrateCylinder2();
 }
 
-void vTask_getblock(void* pvParameters) {
-	
-	bloquinho = ReadTypeBlock();
-	//TODO usar mailbox
 
+//task que vai empurrar cylinderStart sincronizada com user input
+void cylinder_start_task(void* pvParameters) { 
+	while (TRUE) {
+		xQueueSemaphoreTake(sem_cylinder_start_start,
+			portMAX_DELAY);
+		gotoCylinderStart(1);
+		xSemaphoreGive(sem_cylinder_start_finished);
+		gotoCylinderStart(0);
+	}
 }
-//test
+
 void check_package_task(void* pvParameters) {
-	int packageType;
+	uInt8 blockType;
 	while (TRUE) {
 		xQueueSemaphoreTake(sem_check_package_start,
 			portMAX_DELAY);
-		packageType = 1; //substituir pela função ReadTypeBlock() falta implementar
-		xQueueSend(mbx_check_package, &packageType,
+		blockType = ReadTypeBlock(); //substituir pela função ReadTypeBlock()
+		xQueueSend(mbx_check_package, &blockType,
 			portMAX_DELAY);
 	}						// task completion
 }
-//test
-void enter_package_task(void* pvParameters) {
-	int packageType;
+
+void enter_package_task(void* pvParameters) { 
+
+	printf("\nInsert Block type: ");
 	while (TRUE) {
-		getchar(); //press key to enter a new package
+		blockInput = getchar(); //press key to enter a new package
+		switch (blockInput) {
+			case 1: blockInputBit = Block1; break;
+			case 2: blockInputBit = Block2; break;
+			case 3: blockInputBit = Block3; break;
+		}
 		xSemaphoreGive(sem_cylinder_start_start);
 		xSemaphoreGive(sem_check_package_start);
 		//waits for task completion
 		xQueueSemaphoreTake(sem_cylinder_start_finished, portMAX_DELAY);
-		xQueueReceive(mbx_check_package, &packageType, portMAX_DELAY);
-		printf("Package received, Package Type : %d", packageType);
+		xQueueReceive(mbx_check_package, &blockType, portMAX_DELAY);
+		switch (blockType){
+			case Block1: {printf("\nPackage received, Package Type : 1\n"); break; } //blockType é binario
+			case Block2: {printf("\nPackage received, Package Type : 2\n"); break; }
+			case Block3: {printf("\nPackage received, Package Type : 3\n"); break; }
+		}
+		if ((blockType && blockInputBit) != blockType) {   //ESTE IF NÃO TÁ A FUNCIONAR
+			xSemaphoreGive(sem_led_reject); //aciona o led piscante
+		}
 	}
 }
 
-void task_gotoCylinderStart(void* pvParameters) {
-	gotoCylinderStart(1);
-	
-	if (bloquinho == Block1) {
-		printf("BLOCO 1\n");
-	}
-	if (bloquinho == Block2) {
-		printf("BLOCO 2\n");
 
-	}
-	if (bloquinho == Block3) {
-		printf("BLOCO 3\n");
-	}
-	gotoCylinderStart(0);
-}
-void task_gotoCylinder1(void* pvParameters) {
-	gotoCylinder1(1);
-	gotoCylinder1(0);
-}
-void task_gotoCylinder2(void* pvParameters) {
-	gotoCylinder2(1);
-	gotoCylinder2(0);
-}
 
 void vAssertCalled(unsigned long ulLine, const char* const pcFileName)
 {
