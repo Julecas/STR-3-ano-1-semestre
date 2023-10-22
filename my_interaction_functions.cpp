@@ -16,24 +16,60 @@ extern "C" {
 void Conveyor(bool b);
 void moveCylinder(int port, int bitF, bool Fv, int bitB, bool Fb);
 
-void ledReject() {
-	uInt8 p = readDigitalU8(2); // read port 2
-	
-	while(true){ //semaphoro
-	setBitValue(&p, 7, 1); 
-	sleep(500);
-	setBitValue(&p, 7, 0);
+int senseBlockCylinder2() {
+
+	uInt8 p0;
+
+	while (TRUE) {
+
+		p0 = readDigitalU8(0); // read port 1
+
+		if (getBitValue(p0, 0)) {  //get bit 7 active high
+			return 1;
+		}
+	}
+}
+int senseBlockCylinder1() {
+
+	uInt8 p1;
+
+	while (TRUE) {
+
+		p1 = readDigitalU8(1); // read port 1
+
+		if (getBitValue(p1, 7)) {  //get bit 7 active high
+			return 1;
+		}
 	}
 }
 
+void ledRejectOn() {
 
-void calibrateCylinder1() {
+	taskENTER_CRITICAL();
+	uInt8 p = readDigitalU8(2); // read port 2
+	setBitValue(&p, 7, 1);
+	writeDigitalU8(2, p);
+	taskEXIT_CRITICAL();
+}
+
+void ledRejectOff() {
+
+	taskENTER_CRITICAL();
+	uInt8 p = readDigitalU8(2); // read port 2
+	setBitValue(&p, 7, 0);
+	writeDigitalU8(2, p);
+	taskEXIT_CRITICAL();
+}
+
+
+
+void cylinder1FrontBack() {
 
 	gotoCylinder1(1);
 	gotoCylinder1(0);
 }
 
-void calibrateCylinder2() {
+void cylinder2FrontBack() {
 
 	gotoCylinder2(1);
 	gotoCylinder2(0);
@@ -53,7 +89,7 @@ void stopCylinder1() {
 
 void stopCylinder2() {
 
-	moveCylinder(1, 5, 0, 6, 0);
+	moveCylinder(2, 5, 0, 6, 0); //aqui
 }
 
 void moveCylinderStartBack() {
@@ -87,7 +123,7 @@ void moveCylinder2Front() {
 
 }
 
-
+//moveCylinder(2, 0, 0, 1, 0);
 void moveCylinder(int port, int bitF, bool Fv, int bitB, bool Fb) {
 
 	taskENTER_CRITICAL();
@@ -143,7 +179,7 @@ void gotoCylinderStart(int pos) {
 
 	//back (end goal)
 	if (pos == 0) {
-		
+
 		moveCylinderStartBack(); //cylinder 0
 		while (getCylinderStartPos() != 0) {
 			continue;
@@ -158,6 +194,7 @@ void gotoCylinderStart(int pos) {
 		while (getCylinderStartPos() != 1) {
 			continue;
 		}
+		vTaskDelay(250); //1s
 		stopCylinderStart();
 		return;
 	}
@@ -180,7 +217,7 @@ void gotoCylinder1(int pos) {
 	if (pos == 1) {
 
 		moveCylinder1Front(); //cylinder 1
-		while (getCylinder1Pos() != 1){
+		while (getCylinder1Pos() != 1) {
 			continue;
 		}
 		stopCylinder1();
@@ -202,7 +239,7 @@ void gotoCylinder2(int pos) {
 		return;
 	}
 	//front (end goal)
-	
+
 	moveCylinder2Front(); //cylinder 2
 	if (pos == 1) {
 		while (getCylinder2Pos() != 1) {
@@ -241,17 +278,27 @@ void Conveyor(bool b) {
 uInt8 ReadTypeBlock() {
 
 	uInt8 p1,
-		c = 0,
-		p2 = readDigitalU8(0);
+		c = 0;
+		//p2 = readDigitalU8(0);
+	moveCylinderStartFront(); //cylinder 0
 
-	while (p2 | 0b11011111) {
+	while ( true ) {
 
-		p2 = readDigitalU8(0);
+		//p2 = readDigitalU8(0);
 		p1 = readDigitalU8(1);
 		p1 &= 0b01100000;
 		c |= p1;
 
+		if (getCylinderStartPos() == 1) {
+			vTaskDelay(200);
+			p1 = readDigitalU8(1);
+			p1 &= 0b01100000;
+			c |= p1;
+			break;
+		}
 	}
+
+	gotoCylinderStart(0);
 	return c;
 
 }

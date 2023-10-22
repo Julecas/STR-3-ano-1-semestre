@@ -3,6 +3,15 @@
 extern "C" {
 #include <interface.h>
 }
+#define Block1 0x0
+#define Block2 0b01000000
+#define Block3 0b01100000
+
+
+//sensor functions
+
+int senseBlockCylinder2();
+int senseBlockCylinder1();
 
 // given a byte value, returns the value of its bit n
 int getBitValue(uInt8 value, uInt8 bit_n);
@@ -12,7 +21,8 @@ void setBitValue(uInt8* variable, int n_bit, int new_value_bit);
 
 // Led related functions
 
-void ledReject();
+void ledRejectOff();
+void ledRejectOn();
 
 // CylinderStart related functions
 
@@ -47,7 +57,7 @@ void stopCylinderStart();
 
 // Cylinder1 related functions
 
-void calibrateCylinder1();
+void cylinder1FrontBack();
 
 /******************************************************************************************************************************
 * moveCylinder1Front - function that moves to front cylinder 1
@@ -81,7 +91,7 @@ void gotoCylinder1(int pos);
 
 // Cylinder2 related functions
 
-void calibrateCylinder2();
+void cylinder2FrontBack();
 
 /******************************************************************************************************************************
 * moveCylinder(n)Front - function that moves to front cylinder 0 , 1 or 2
