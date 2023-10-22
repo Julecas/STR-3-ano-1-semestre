@@ -37,7 +37,7 @@ xSemaphoreHandle sem_cylinder_start_finished;
 xQueueHandle mbx_check_package;
 xSemaphoreHandle sem_check_package_start;
 xSemaphoreHandle sem_led_reject;
-
+xSemaphoreHandle sem_conveyor;
 
 
 void vAssertCalled(unsigned long ulLine, const char* const pcFileName);
@@ -80,6 +80,7 @@ void myDaemonTaskStartupHook(void) {
 	sem_cylinder_start_finished = xSemaphoreCreateCounting(10, 0);
 	mbx_check_package = xQueueCreate(10, sizeof(int));
 	sem_led_reject = xSemaphoreCreateBinary();
+	sem_conveyor = xSemaphoreCreateCounting(10, 0);
 
 	inicializarPortos();
 	
@@ -88,7 +89,7 @@ void myDaemonTaskStartupHook(void) {
 	//xTaskCreate(vTask_calibrate_cilinder2, "Clibrate Cylinder2 Task", 100, NULL, 0, NULL);
 
 	//led task
-	xTaskCreate(vTask_TurnRejectLedOn, "Turn Led On Task", 100, NULL, 0, NULL);
+	//xTaskCreate(vTask_TurnRejectLedOn, "Turn Led On Task", 100, NULL, 0, NULL);
 
 	//conveyor task
 	xTaskCreate(vTask_ConveyorOn, "Conveyor On Task", 100, NULL, 0, NULL);
@@ -103,31 +104,40 @@ void myDaemonTaskStartupHook(void) {
 void vTask_TurnRejectLedOn(void* pvParameters) {
 	
 	
-	xSemaphoreTake(sem_cylinder_start_start,portMAX_DELAY);//xSemaphoreTake(sem_led_reject,portMAX_DELAY);
+	xSemaphoreTake(sem_led_reject,portMAX_DELAY);
 	//waits for task completion
-	time_t secs = 3; //for de 3 segundos
+	time_t secs = 5; //for de 3 segundos
 	time_t startTime = time(NULL);
 
 	while (time(NULL) - startTime < secs) {
 
 		ledRejectOn();
+		//printf("led on");
 		vTaskDelay(250);//ms
 		ledRejectOff();
+		//printf("led off");
 		vTaskDelay(250);//ms
 	}
 
 }
 
 void vTask_ConveyorOn(void* pvParameters) {
-	ConveyorOn();
+	
+	while (TRUE) {
+		ConveyorOn();
+		xQueueSemaphoreTake(sem_conveyor,
+			portMAX_DELAY);
+		ConveyorOff();
+		vTaskDelay(5000); //5s
+	}
 }
 
 void vTask_calibrate_cilinder1(void* pvParameters) {
-	calibrateCylinder1();
+	cylinder1FrontBack();
 }
 
 void vTask_calibrate_cilinder2(void* pvParameters) {
-	calibrateCylinder2();
+	cylinder2FrontBack();
 }
 
 
@@ -163,20 +173,40 @@ void enter_package_task(void* pvParameters) {
 			case 2: blockInputBit = Block2; break;
 			case 3: blockInputBit = Block3; break;
 		}
+
 		xSemaphoreGive(sem_cylinder_start_start);
 		xSemaphoreGive(sem_check_package_start);
 		//waits for task completion
 		xQueueSemaphoreTake(sem_cylinder_start_finished, portMAX_DELAY);
 		xQueueReceive(mbx_check_package, &blockType, portMAX_DELAY);
+
 		switch (blockType){
 			case Block1: {printf("\nPackage received, Package Type : 1\n"); break; } //blockType é binario
 			case Block2: {printf("\nPackage received, Package Type : 2\n"); break; }
 			case Block3: {printf("\nPackage received, Package Type : 3\n"); break; }
 		}
-		if ((blockType && blockInputBit) != blockType) {   //ESTE IF NÃO TÁ A FUNCIONAR
-			xSemaphoreGive(sem_led_reject); //aciona o led piscante
+		if (FALSE) {   //ESTE IF NÃO TÁ A FUNCIONAR !(blockType == blockInputBit)
+			xSemaphoreGive(sem_led_reject); //aciona o led piscante se input != sensores
+		}
+		else {
+			if (blockType == Block1) { //se for igual de 1
+				if (senseBlockCylinder1()) {
+					xSemaphoreGive(sem_conveyor);
+					cylinder1FrontBack();
+				}
+			}
+			if (blockType == Block2) { //se for igual de 2
+				if (senseBlockCylinder2()) {
+					xSemaphoreGive(sem_conveyor);
+					cylinder2FrontBack();
+				}
+			}
+			if (blockType == Block3) { //se for igual de 3
+
+			}
 		}
 	}
+	
 }
 
 

@@ -16,33 +16,60 @@ extern "C" {
 void Conveyor(bool b);
 void moveCylinder(int port, int bitF, bool Fv, int bitB, bool Fb);
 
+int senseBlockCylinder2() {
+
+	uInt8 p0;
+
+	while (TRUE) {
+
+		p0 = readDigitalU8(0); // read port 1
+
+		if (getBitValue(p0, 0)) {  //get bit 7 active high
+			return 1;
+		}
+	}
+}
+int senseBlockCylinder1(){
+
+	uInt8 p1; 
+
+	while(TRUE) {
+		
+		p1 = readDigitalU8(1); // read port 1
+		
+		if (getBitValue(p1, 7)) {  //get bit 7 active high
+			return 1;
+		} 		
+	}
+}
+
 void ledRejectOn() {
 
-	//taskENTER_CRITICAL();
+	taskENTER_CRITICAL();
 	uInt8 p = readDigitalU8(2); // read port 2
 	setBitValue(&p, 7, 1); 
 	writeDigitalU8(2, p);
-	//taskEXIT_CRITICAL();
+	taskEXIT_CRITICAL();
 }
 
 void ledRejectOff() {
 
-	//taskENTER_CRITICAL();
+	taskENTER_CRITICAL();
 	uInt8 p = readDigitalU8(2); // read port 2
 	setBitValue(&p, 7, 0);
 	writeDigitalU8(2, p);
-	//taskEXIT_CRITICAL();
+	taskEXIT_CRITICAL();
 }
 
 
 
-void calibrateCylinder1() {
+void cylinder1FrontBack() {
 
 	gotoCylinder1(1);
 	gotoCylinder1(0);
 }
 
-void calibrateCylinder2() {
+void cylinder2FrontBack() {
 
 	gotoCylinder2(1);
 	gotoCylinder2(0);
@@ -96,7 +123,7 @@ void moveCylinder2Front() {
 
 }
 
-
+//moveCylinder(2, 0, 0, 1, 0);
 void moveCylinder(int port, int bitF, bool Fv, int bitB, bool Fb) {
 
 	taskENTER_CRITICAL();
@@ -167,6 +194,7 @@ void gotoCylinderStart(int pos) {
 		while (getCylinderStartPos() != 1) {
 			continue;
 		}
+		vTaskDelay(250); //1s
 		stopCylinderStart();
 		return;
 	}
