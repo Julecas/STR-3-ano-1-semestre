@@ -3,20 +3,40 @@
 #include <stdio.h>
 #include <conio.h>
 
+//debug
+#include <bitset>
+#include <iostream>
+
+//debug
+
+
 extern "C" {
-#include <FreeRTOS.h>
-#include <task.h>
-#include <timers.h>
-#include <semphr.h>
-#include <interface.h>	
-#include <interrupts.h>
+	#include <FreeRTOS.h>
+	#include <task.h>
+	#include <timers.h>
+	#include <semphr.h>
+	#include <interface.h>	
+	#include <interrupts.h>
 }
 
 
 void Conveyor(bool b);
 void moveCylinder(int port, int bitF, bool Fv, int bitB, bool Fb);
 
-int senseBlockCylinder2() {
+void senseBlockCylinder2() {
+
+	uInt8 p1;
+
+	while (TRUE) {
+
+		p1 = readDigitalU8(1); // read port 1
+
+		if( getBitValue(p1, 7) ) {  //get bit 7 active high
+			return;
+		}
+	}
+}
+void senseBlockCylinder1() {
 
 	uInt8 p0;
 
@@ -25,21 +45,8 @@ int senseBlockCylinder2() {
 		p0 = readDigitalU8(0); // read port 1
 
 		if (getBitValue(p0, 0)) {  //get bit 7 active high
-			return 1;
+			return;
 		}
-	}
-}
-int senseBlockCylinder1(){
-
-	uInt8 p1; 
-
-	while(TRUE) {
-		
-		p1 = readDigitalU8(1); // read port 1
-		
-		if (getBitValue(p1, 7)) {  //get bit 7 active high
-			return 1;
-		} 		
 	}
 }
 
@@ -47,7 +54,7 @@ void ledRejectOn() {
 
 	taskENTER_CRITICAL();
 	uInt8 p = readDigitalU8(2); // read port 2
-	setBitValue(&p, 7, 1); 
+	setBitValue(&p, 7, 1);
 	writeDigitalU8(2, p);
 	taskEXIT_CRITICAL();
 }
@@ -179,7 +186,7 @@ void gotoCylinderStart(int pos) {
 
 	//back (end goal)
 	if (pos == 0) {
-		
+
 		moveCylinderStartBack(); //cylinder 0
 		while (getCylinderStartPos() != 0) {
 			continue;
@@ -217,7 +224,7 @@ void gotoCylinder1(int pos) {
 	if (pos == 1) {
 
 		moveCylinder1Front(); //cylinder 1
-		while (getCylinder1Pos() != 1){
+		while (getCylinder1Pos() != 1) {
 			continue;
 		}
 		stopCylinder1();
@@ -239,9 +246,10 @@ void gotoCylinder2(int pos) {
 		return;
 	}
 	//front (end goal)
-	
-	moveCylinder2Front(); //cylinder 2
+
 	if (pos == 1) {
+		moveCylinder2Front(); //cylinder 2
+
 		while (getCylinder2Pos() != 1) {
 			continue;
 		}
@@ -264,12 +272,13 @@ void ConveyorOff() {
 //False off
 void Conveyor(bool b) {
 
-	//int n = b ? 1 : 0;
 	//task critic
 	taskENTER_CRITICAL();
+
 	uInt8 p = readDigitalU8(2); // read port 2
 	setBitValue(&p, 2, b);
 	writeDigitalU8(2, p);
+	
 	taskEXIT_CRITICAL();
 
 }
@@ -278,90 +287,100 @@ void Conveyor(bool b) {
 uInt8 ReadTypeBlock() {
 
 	uInt8 p1,
-		c = 0,
-		p2 = readDigitalU8(0);
-	//moveCylinderStartFront(); //cylinder 0
+		c = 0;
+		//p2 = readDigitalU8(0);
+	moveCylinderStartFront(); //cylinder 0
 
-	while (p2 | 0b11011111 && getCylinderStartPos() != 1 ) {
+	while ( true ) {
 
-		p2 = readDigitalU8(0);
+		//p2 = readDigitalU8(0);
 		p1 = readDigitalU8(1);
 		p1 &= 0b01100000;
 		c |= p1;
+		
+		if (getCylinderStartPos() == 1) {
 
+			vTaskDelay(100);
+			p1 = readDigitalU8(1);
+			p1 &= 0b01100000;
+			c |= p1;
+			break;
+		}
 	}
 
-	//gotoCylinderStart(0);
-	return c;
+	gotoCylinderStart(0);
+
+	uInt8 ret =
+		((c & 0b00100000) > 0) + (c >> 6);//counts how many bits == 1
+
+
+	return ret;
 
 }
 
 
 void cylinderTest() {
 	int tecla = 0;
-	while (tecla != 27) {
+	while (TRUE) {
+
 		tecla = _getch();
-		if (tecla == 'q') {
-			//printf("vai mover CylinderStart front");
-			moveCylinderStartFront(); //0 -> cylinder 0
+		switch (tecla) {
+		case 'q': {
+			moveCylinderStartFront(); 
+			while (tecla == 'q') {
+				tecla = _getch();
+			}
+			stopCylinderStart();
+			break;
 		}
-		if (tecla == 'a') {
-			//printf("vai mover CylinderStart back");
-			moveCylinderStartBack(); //1 -> cylinder 0
+		case 'a': {
+			moveCylinderStartBack();
+			while (tecla == 'a') {
+				tecla = _getch();
+			}
+			stopCylinderStart();
+			break;
 		}
-		if (tecla == 'z') {
-			//printf("vai parar CylinderStart");
-			stopCylinderStart(); //0 -> cylinder 0
+		case 'w': {
+			moveCylinder1Front();
+			while (tecla == 'a') {
+				tecla = _getch();
+			}
+			stopCylinder1();
+			break;
 		}
-		if (tecla == 'w') {
-			//printf("vai mover Cylinder1 front");
-			moveCylinder1Front(); //3 -> cylinder 1
+		case 's': {
+			moveCylinder1Back();
+			while (tecla == 'a') {
+				tecla = _getch();
+			}
+			stopCylinder1();
+			break;
 		}
-		if (tecla == 's') {
-			//printf("vai mover Cylinder2 back");
-			moveCylinder1Back(); //4 -> cylinder 1
+		case 'e': {
+			moveCylinder2Front();
+			while (tecla == 'a') {
+				tecla = _getch();
+			}
+			stopCylinder2();
+			break;
 		}
-		if (tecla == 'x') {
-			//printf("vai parar CylinderStart");
-			stopCylinder1(); //3 -> cylinder 1
+		case 'd': {
+			moveCylinder2Back();
+			while (tecla == 'a') {
+				tecla = _getch();
+			}
+			stopCylinder2();
+			break;
 		}
-		if (tecla == 'e') {
-			//printf("vai mover Cylinder1 front");
-			moveCylinder2Front(); //5 -> cylinder 2
+		case 'r': {gotoCylinderStart(0);	break;}
+		case 't': {gotoCylinderStart(1);	break;}
+		case 'f': {gotoCylinder1(0);		break;}
+		case 'g': {gotoCylinder1(1); 		break;}
+		case 'v': {gotoCylinder2(0);		break;}
+		case 'b': {gotoCylinder2(1);		break;}
+		default: return;
 		}
-		if (tecla == 'd') {
-			//printf("vai mover Cylinder2 back");
-			moveCylinder2Back(); //6 -> cylinder 2
-		}
-		if (tecla == 'c') {
-			//printf("vai parar CylinderStart");
-			stopCylinder2(); //5 -> cylinder 2
-		}
-		if (tecla == 'r') {
-			printf("goto back c0");
-			gotoCylinderStart(0); //0 back pos
-		}
-		if (tecla == 't') {
-			printf("goto front c0");
-			gotoCylinderStart(1); //0 front pos
-		}
-		if (tecla == 'f') {
-			printf("goto back c1");
-			gotoCylinder1(0); //0 back pos
-		}
-		if (tecla == 'g') {
-			printf("goto front c1");
-			gotoCylinder1(1); //0 front pos
-		}
-		if (tecla == 'v') {
-			printf("goto back c2");
-			gotoCylinder2(0); //0 back pos
-		}
-		if (tecla == 'b') {
-			printf("goto front c2");
-			gotoCylinder2(1); //0 front pos
-		}
-		return;
 	}
 }
 

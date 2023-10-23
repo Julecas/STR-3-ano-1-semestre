@@ -1,5 +1,8 @@
-// labwork1.cpp : Este arquivo contÃ©m a funÃ§Ã£o 'main'. A execuÃ§Ã£o do programa comeÃ§a e termina ali.
+// labwork1.cpp : Este arquivo contém a função 'main'. A execução do programa começa e termina ali.
 //
+
+//DEBUG
+#include <bitset>
 
 #include <time.h>
 #include<conio.h>
@@ -7,6 +10,7 @@
 #include <windows.h> //for Sleep function
 #include <stdio.h>
 #include <my_interaction_functions.h>
+#include <iostream>
 
 extern "C" {
 #include <FreeRTOS.h>
@@ -21,15 +25,6 @@ extern "C" {
 #define mainREGION_1_SIZE   8201
 #define mainREGION_2_SIZE   29905
 #define mainREGION_3_SIZE   7607
-
-#define Block1 0x0
-#define Block2 0b01000000
-#define Block3 0b01100000
-
-//variaveis globais 
-uInt8 blockType = {};
-uInt8  blockInputBit = {};
-int blockInput = 0;
 
 //Semaphores and Mailboxes declaration
 xSemaphoreHandle sem_cylinder_start_start;
@@ -50,7 +45,6 @@ void vTask_calibrate_cilinder1(void* pvParameters);
 void vTask_calibrate_cilinder2(void* pvParameters);
 void check_package_task(void* pvParameters);
 void enter_package_task(void* pvParameters);
-void cylinder_start_task(void* pvParameters);
 void vTask_TurnRejectLedOn(void* pvParameters);
 
 //test
@@ -62,7 +56,7 @@ int main(int argc, char** argv) {
 	Sleep(2000);
 	initialiseHeap();
 	vApplicationDaemonTaskStartupHook = &myDaemonTaskStartupHook;
-	
+
 	//vApplicationTickHook              = &myTickHook;
 	//vApplicationIdleHook              = &myIdleHook;
 
@@ -74,7 +68,7 @@ int main(int argc, char** argv) {
 
 void myDaemonTaskStartupHook(void) {
 
-	
+
 	sem_cylinder_start_start = xSemaphoreCreateCounting(10, 0);
 	sem_check_package_start = xSemaphoreCreateCounting(10, 0);
 	sem_cylinder_start_finished = xSemaphoreCreateCounting(10, 0);
@@ -83,52 +77,57 @@ void myDaemonTaskStartupHook(void) {
 	sem_conveyor = xSemaphoreCreateCounting(10, 0);
 
 	inicializarPortos();
-	
+
 	//cylinder calibration tasks
-	//xTaskCreate(vTask_calibrate_cilinder1, "Clibrate Cylinder1 Task", 100, NULL, 0, NULL);
-	//xTaskCreate(vTask_calibrate_cilinder2, "Clibrate Cylinder2 Task", 100, NULL, 0, NULL);
 
 	//led task
-	//xTaskCreate(vTask_TurnRejectLedOn, "Turn Led On Task", 100, NULL, 0, NULL);
+	xTaskCreate(vTask_TurnRejectLedOn, "Turn Led On Task", 100, NULL, 0, NULL);
 
 	//conveyor task
 	xTaskCreate(vTask_ConveyorOn, "Conveyor On Task", 100, NULL, 0, NULL);
 
 	//brick input and verification tasks
-	xTaskCreate(cylinder_start_task, "Cylinder Start Task", 100, NULL, 0, NULL);
+	//xTaskCreate(cylinder_start_task, "Cylinder Start Task", 100, NULL, 0, NULL);
 	xTaskCreate(check_package_task, "Check package Task", 100, NULL, 0, NULL);
 	xTaskCreate(enter_package_task, "Enter Package Task", 100, NULL, 0, NULL);
 
 }
 
 void vTask_TurnRejectLedOn(void* pvParameters) {
-	
-	
-	xSemaphoreTake(sem_led_reject,portMAX_DELAY);
+
+
 	//waits for task completion
-	time_t secs = 5; //for de 3 segundos
-	time_t startTime = time(NULL);
+	//time_t secs = 5; //for de 3 segundos
+	//time_t startTime = time(NULL);
 
-	while (time(NULL) - startTime < secs) {
+	while (true) {
+		xSemaphoreTake(sem_led_reject, portMAX_DELAY);
 
-		ledRejectOn();
-		//printf("led on");
-		vTaskDelay(250);//ms
-		ledRejectOff();
-		//printf("led off");
-		vTaskDelay(250);//ms
+		for (int j = 0; j < 6;++j) {
+
+
+			ledRejectOn();
+			//printf("led on");
+			vTaskDelay(250);//ms
+			ledRejectOff();
+			//printf("led off");
+			vTaskDelay(250);//ms
+		}
 	}
 
 }
 
 void vTask_ConveyorOn(void* pvParameters) {
-	
+
 	while (TRUE) {
+
+		xQueueSemaphoreTake(
+			sem_conveyor,
+			portMAX_DELAY
+		);
 		ConveyorOn();
-		xQueueSemaphoreTake(sem_conveyor,
-			portMAX_DELAY);
-		ConveyorOff();
-		vTaskDelay(5000); //5s
+
+		//ConveyorOff();
 	}
 }
 
@@ -140,73 +139,89 @@ void vTask_calibrate_cilinder2(void* pvParameters) {
 	cylinder2FrontBack();
 }
 
-
-//task que vai empurrar cylinderStart sincronizada com user input
-void cylinder_start_task(void* pvParameters) { 
-	while (TRUE) {
-		xQueueSemaphoreTake(sem_cylinder_start_start,
-			portMAX_DELAY);
-		gotoCylinderStart(1);
-		xSemaphoreGive(sem_cylinder_start_finished);
-		gotoCylinderStart(0);
-	}
-}
-
 void check_package_task(void* pvParameters) {
+	
 	uInt8 blockType;
+	
 	while (TRUE) {
 		xQueueSemaphoreTake(sem_check_package_start,
 			portMAX_DELAY);
-		blockType = ReadTypeBlock(); //substituir pela funÃ§Ã£o ReadTypeBlock()
+		blockType = ReadTypeBlock(); 
 		xQueueSend(mbx_check_package, &blockType,
 			portMAX_DELAY);
 	}						// task completion
 }
 
-void enter_package_task(void* pvParameters) { 
+void enter_package_task(void* pvParameters) {
 
-	printf("\nInsert Block type: ");
+	uInt8 blockType,
+		  blockInput;
+
 	while (TRUE) {
-		blockInput = getchar(); //press key to enter a new package
-		switch (blockInput) {
-			case 1: blockInputBit = Block1; break;
-			case 2: blockInputBit = Block2; break;
-			case 3: blockInputBit = Block3; break;
-		}
+		
+		blockType  = 0;
+		blockInput = 0;
 
-		xSemaphoreGive(sem_cylinder_start_start);
+		printf("\nInsert Block type (1, 2 or 3) or type (m) for manual control ");
+		
+		std::cin >> blockInput;
+
+		if (blockInput == 'm') {
+			cylinderTest();
+		}
+		blockInput -= ( '0' + 1 );//convert to same format 
+
+
+		if ( blockInput < 0 || blockInput > Block3 ) {//catch bad input
+			break;
+		}
+		
+		xSemaphoreGive(sem_conveyor);
+		std::cout << "DEBUG";
 		xSemaphoreGive(sem_check_package_start);
 		//waits for task completion
-		xQueueSemaphoreTake(sem_cylinder_start_finished, portMAX_DELAY);
+
 		xQueueReceive(mbx_check_package, &blockType, portMAX_DELAY);
 
-		switch (blockType){
-			case Block1: {printf("\nPackage received, Package Type : 1\n"); break; } //blockType Ã© binario
-			case Block2: {printf("\nPackage received, Package Type : 2\n"); break; }
-			case Block3: {printf("\nPackage received, Package Type : 3\n"); break; }
+		switch (blockType) {
+		case Block1: {printf("\nPackage received, Package Type : 1\n"); break; } //blockType é binario
+		case Block2: {printf("\nPackage received, Package Type : 2\n"); break; }
+		case Block3: {printf("\nPackage received, Package Type : 3\n"); break; }
 		}
-		if (FALSE) {   //ESTE IF NÃƒO TÃ A FUNCIONAR !(blockType == blockInputBit)
+		if (blockType != blockInput) {  
 			xSemaphoreGive(sem_led_reject); //aciona o led piscante se input != sensores
+			printf("BLOCO ERRADO\nInserido:%d \nRecebido%d\n", blockInput + 1, blockType + 1 );
+			goto lixo;
 		}
 		else {
-			if (blockType == Block1) { //se for igual de 1
-				if (senseBlockCylinder1()) {
-					xSemaphoreGive(sem_conveyor);
-					cylinder1FrontBack();
-				}
-			}
-			if (blockType == Block2) { //se for igual de 2
-				if (senseBlockCylinder2()) {
-					xSemaphoreGive(sem_conveyor);
-					cylinder2FrontBack();
-				}
-			}
-			if (blockType == Block3) { //se for igual de 3
+
+			switch (blockType) {
+
+			case Block1:
+
+				senseBlockCylinder1();
+				ConveyorOff();
+				cylinder1FrontBack();
+				//ConveyorOn();
+				break;
+
+			case Block2:
+
+				senseBlockCylinder2();
+				ConveyorOff();
+				cylinder2FrontBack();
+				//ConveyorOn();
+				break;
+
+			default:
+				lixo:
+				vTaskDelay(5000);
+				ConveyorOff();
+				break;
 
 			}
 		}
 	}
-	
 }
 
 
@@ -292,13 +307,13 @@ void myIdleHook(void) { //runs when all task are occupied
 
 
 
-// Executar programa: Ctrl + F5 ou Menu Depurar > Iniciar Sem DepuraÃ§Ã£o
-// Depurar programa: F5 ou menu Depurar > Iniciar DepuraÃ§Ã£o
+// Executar programa: Ctrl + F5 ou Menu Depurar > Iniciar Sem Depuração
+// Depurar programa: F5 ou menu Depurar > Iniciar Depuração
 
-// Dicas para ComeÃ§ar: 
-//   1. Use a janela do Gerenciador de SoluÃ§Ãµes para adicionar/gerenciar arquivos
-//   2. Use a janela do Team Explorer para conectar-se ao controle do cÃ³digo-fonte
-//   3. Use a janela de SaÃ­da para ver mensagens de saÃ­da do build e outras mensagens
+// Dicas para Começar: 
+//   1. Use a janela do Gerenciador de Soluções para adicionar/gerenciar arquivos
+//   2. Use a janela do Team Explorer para conectar-se ao controle do código-fonte
+//   3. Use a janela de Saída para ver mensagens de saída do build e outras mensagens
 //   4. Use a janela Lista de Erros para exibir erros
-//   5. Ir Para o Projeto > Adicionar Novo Item para criar novos arquivos de cÃ³digo, ou Projeto > Adicionar Item Existente para adicionar arquivos de cÃ³digo existentes ao projeto
-//   6. No futuro, para abrir este projeto novamente, vÃ¡ para Arquivo > Abrir > Projeto e selecione o arquivo. sln
+//   5. Ir Para o Projeto > Adicionar Novo Item para criar novos arquivos de código, ou Projeto > Adicionar Item Existente para adicionar arquivos de código existentes ao projeto
+//   6. No futuro, para abrir este projeto novamente, vá para Arquivo > Abrir > Projeto e selecione o arquivo. sln
