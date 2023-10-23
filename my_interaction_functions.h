@@ -3,15 +3,15 @@
 extern "C" {
 #include <interface.h>
 }
-#define Block1 0x0
-#define Block2 0b01000000
-#define Block3 0b01100000
+const uInt8 Block1 = 0x0;
+const uInt8 Block2 = 0x1;
+const uInt8 Block3 = 0x2;
 
 
 //sensor functions
 
-int senseBlockCylinder2();
-int senseBlockCylinder1();
+void senseBlockCylinder2();
+void senseBlockCylinder1();
 
 // given a byte value, returns the value of its bit n
 int getBitValue(uInt8 value, uInt8 bit_n);

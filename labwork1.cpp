@@ -1,6 +1,9 @@
 // labwork1.cpp : Este arquivo contém a função 'main'. A execução do programa começa e termina ali.
 //
 
+//DEBUG
+#include <bitset>
+
 #include <time.h>
 #include<conio.h>
 #include<stdlib.h>
@@ -22,10 +25,6 @@ extern "C" {
 #define mainREGION_1_SIZE   8201
 #define mainREGION_2_SIZE   29905
 #define mainREGION_3_SIZE   7607
-
-#define Block1 0x0
-#define Block2 0b01000000
-#define Block3 0b01100000
 
 //Semaphores and Mailboxes declaration
 xSemaphoreHandle sem_cylinder_start_start;
@@ -123,11 +122,14 @@ void vTask_TurnRejectLedOn(void* pvParameters) {
 void vTask_ConveyorOn(void* pvParameters) {
 
 	while (TRUE) {
+
+		xQueueSemaphoreTake(
+			sem_conveyor,
+			portMAX_DELAY
+		);
 		ConveyorOn();
-		xQueueSemaphoreTake(sem_conveyor,
-			portMAX_DELAY);
-		ConveyorOff();
-		vTaskDelay(5000); //5s
+
+		//ConveyorOff();
 	}
 }
 
@@ -146,7 +148,7 @@ void check_package_task(void* pvParameters) {
 	while (TRUE) {
 		xQueueSemaphoreTake(sem_check_package_start,
 			portMAX_DELAY);
-		blockType = ReadTypeBlock(); //substituir pela função ReadTypeBlock()
+		blockType = ReadTypeBlock(); 
 		xQueueSend(mbx_check_package, &blockType,
 			portMAX_DELAY);
 	}						// task completion
@@ -154,62 +156,70 @@ void check_package_task(void* pvParameters) {
 
 void enter_package_task(void* pvParameters) {
 
-	//variaveis globais 
-	uInt8 blockType = 0;
-	uInt8 blockInputBit = 0;
-	int blockInput = 0;
-	bool ent = false;	//Signals non valid option
+	uInt8 blockType,
+		  blockInput;
 
 	while (TRUE) {
+		
+		blockType  = 0;
+		blockInput = 0;
 
 		printf("\nInsert Block type: ");
 
 		std::cin >> blockInput;
-		//scanf("%d\n", &blockInputBit);
+		blockInput -= ( '0' + 1 );//convert to same format 
 
-		switch (blockInput) {
-			case 1: blockInputBit = Block1; break;
-			case 2: blockInputBit = Block2; break;
-			case 3: blockInputBit = Block3; break;
-			default: ent = true;  break;
-		}
-
-		if (ent) {
-			ent = false;
+		if ( blockInput < 0 || blockInput > Block3 ) {//catch bad input
 			break;
 		}
 
+		xSemaphoreGive(sem_conveyor);
+
+		std::cout << "DEBUG";
 		xSemaphoreGive(sem_check_package_start);
 		//waits for task completion
+
 		xQueueReceive(mbx_check_package, &blockType, portMAX_DELAY);
 
 		switch (blockType) {
-			case Block1: {printf("\nPackage received, Package Type : 1\n"); break; } //blockType é binario
-			case Block2: {printf("\nPackage received, Package Type : 2\n"); break; }
-			case Block3: {printf("\nPackage received, Package Type : 3\n"); break; }
+		case Block1: {printf("\nPackage received, Package Type : 1\n"); break; } //blockType é binario
+		case Block2: {printf("\nPackage received, Package Type : 2\n"); break; }
+		case Block3: {printf("\nPackage received, Package Type : 3\n"); break; }
 		}
-		if ( blockType != blockInputBit ){   //ESTE IF NÃO TÁ A FUNCIONAR !(blockType == blockInputBit)
+		if (blockType != blockInput) {  
 			xSemaphoreGive(sem_led_reject); //aciona o led piscante se input != sensores
+			printf("BLOCO ERRADO\nInserido:%d \nRecebido%d\n", blockInput + 1, blockType + 1 );
+			goto lixo;
 		}
 		else {
-			if (blockType == Block1) { //se for igual de 1
-				if (senseBlockCylinder1()) {
-					xSemaphoreGive(sem_conveyor);
-					cylinder1FrontBack();
-				}
-			}
-			if (blockType == Block2) { //se for igual de 2
-				if (senseBlockCylinder2()) {
-					xSemaphoreGive(sem_conveyor);
-					cylinder2FrontBack();
-				}
-			}
-			if (blockType == Block3) { //se for igual de 3
+
+			switch (blockType) {
+
+			case Block1:
+
+				senseBlockCylinder1();
+				ConveyorOff();
+				cylinder1FrontBack();
+				//ConveyorOn();
+				break;
+
+			case Block2:
+
+				senseBlockCylinder2();
+				ConveyorOff();
+				cylinder2FrontBack();
+				//ConveyorOn();
+				break;
+
+			default:
+				lixo:
+				vTaskDelay(5000);
+				ConveyorOff();
+				break;
 
 			}
 		}
 	}
-
 }
 
 

@@ -3,20 +3,40 @@
 #include <stdio.h>
 #include <conio.h>
 
+//debug
+#include <bitset>
+#include <iostream>
+
+//debug
+
+
 extern "C" {
-#include <FreeRTOS.h>
-#include <task.h>
-#include <timers.h>
-#include <semphr.h>
-#include <interface.h>	
-#include <interrupts.h>
+	#include <FreeRTOS.h>
+	#include <task.h>
+	#include <timers.h>
+	#include <semphr.h>
+	#include <interface.h>	
+	#include <interrupts.h>
 }
 
 
 void Conveyor(bool b);
 void moveCylinder(int port, int bitF, bool Fv, int bitB, bool Fb);
 
-int senseBlockCylinder2() {
+void senseBlockCylinder2() {
+
+	uInt8 p1;
+
+	while (TRUE) {
+
+		p1 = readDigitalU8(1); // read port 1
+
+		if( getBitValue(p1, 7) ) {  //get bit 7 active high
+			return;
+		}
+	}
+}
+void senseBlockCylinder1() {
 
 	uInt8 p0;
 
@@ -25,20 +45,7 @@ int senseBlockCylinder2() {
 		p0 = readDigitalU8(0); // read port 1
 
 		if (getBitValue(p0, 0)) {  //get bit 7 active high
-			return 1;
-		}
-	}
-}
-int senseBlockCylinder1() {
-
-	uInt8 p1;
-
-	while (TRUE) {
-
-		p1 = readDigitalU8(1); // read port 1
-
-		if (getBitValue(p1, 7)) {  //get bit 7 active high
-			return 1;
+			return;
 		}
 	}
 }
@@ -240,8 +247,9 @@ void gotoCylinder2(int pos) {
 	}
 	//front (end goal)
 
-	moveCylinder2Front(); //cylinder 2
 	if (pos == 1) {
+		moveCylinder2Front(); //cylinder 2
+
 		while (getCylinder2Pos() != 1) {
 			continue;
 		}
@@ -264,12 +272,13 @@ void ConveyorOff() {
 //False off
 void Conveyor(bool b) {
 
-	//int n = b ? 1 : 0;
 	//task critic
 	taskENTER_CRITICAL();
+
 	uInt8 p = readDigitalU8(2); // read port 2
 	setBitValue(&p, 2, b);
 	writeDigitalU8(2, p);
+	
 	taskEXIT_CRITICAL();
 
 }
@@ -288,9 +297,10 @@ uInt8 ReadTypeBlock() {
 		p1 = readDigitalU8(1);
 		p1 &= 0b01100000;
 		c |= p1;
-
+		
 		if (getCylinderStartPos() == 1) {
-			vTaskDelay(200);
+
+			vTaskDelay(50);
 			p1 = readDigitalU8(1);
 			p1 &= 0b01100000;
 			c |= p1;
@@ -299,7 +309,12 @@ uInt8 ReadTypeBlock() {
 	}
 
 	gotoCylinderStart(0);
-	return c;
+
+	uInt8 ret =
+		((c & 0b00100000) > 0) + (c >> 6);//counts how many bits == 1
+
+
+	return ret;
 
 }
 
