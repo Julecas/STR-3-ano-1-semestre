@@ -26,10 +26,6 @@ extern "C" {
 #define mainREGION_2_SIZE   29905
 #define mainREGION_3_SIZE   7607
 
-#define Block1 0x0
-#define Block2 0b01000000
-#define Block3 0b01100000
-
 //Semaphores and Mailboxes declaration
 xSemaphoreHandle sem_cylinder_start_start;
 xSemaphoreHandle sem_cylinder_start_finished;
@@ -37,6 +33,8 @@ xQueueHandle mbx_check_package;
 xSemaphoreHandle sem_check_package_start;
 xSemaphoreHandle sem_led_reject;
 xSemaphoreHandle sem_conveyor;
+xSemaphoreHandle sem_cylinder_start_back;
+TaskHandle_t handle;
 
 
 void vAssertCalled(unsigned long ulLine, const char* const pcFileName);
@@ -50,6 +48,7 @@ void vTask_calibrate_cilinder2(void* pvParameters);
 void check_package_task(void* pvParameters);
 void enter_package_task(void* pvParameters);
 void vTask_TurnRejectLedOn(void* pvParameters);
+void Task_Go_Back(void* Parameters);
 
 //test
 void vTask_ConveyorOn(void* pvParameters);
@@ -73,18 +72,20 @@ int main(int argc, char** argv) {
 void myDaemonTaskStartupHook(void) {
 
 
-	sem_cylinder_start_start = xSemaphoreCreateCounting(10, 0);
-	sem_check_package_start = xSemaphoreCreateCounting(10, 0);
+	sem_cylinder_start_start	= xSemaphoreCreateCounting(10, 0);
+	sem_check_package_start		= xSemaphoreCreateCounting(10, 0);
 	sem_cylinder_start_finished = xSemaphoreCreateCounting(10, 0);
-	mbx_check_package = xQueueCreate(10, sizeof(int));
-	sem_led_reject = xSemaphoreCreateBinary();
-	sem_conveyor = xSemaphoreCreateCounting(10, 0);
+	sem_led_reject				= xSemaphoreCreateBinary();
+	sem_conveyor				= xSemaphoreCreateCounting(10, 0);
+	sem_cylinder_start_back		= xSemaphoreCreateCounting(10, 0);
+	mbx_check_package			= xQueueCreate(10, sizeof(int));
+
 
 	inicializarPortos();
 
 	//cylinder calibration tasks
-	//xTaskCreate(vTask_calibrate_cilinder1, "Clibrate Cylinder1 Task", 100, NULL, 0, NULL);
-	//xTaskCreate(vTask_calibrate_cilinder2, "Clibrate Cylinder2 Task", 100, NULL, 0, NULL);
+	
+	xTaskCreate(Task_Go_Back, "Cylinder Start front to back", 1000, NULL, 1, NULL);
 
 	//led task
 	xTaskCreate(vTask_TurnRejectLedOn, "Turn Led On Task", 100, NULL, 0, NULL);
@@ -99,17 +100,30 @@ void myDaemonTaskStartupHook(void) {
 
 }
 
-void vTask_TurnRejectLedOn(void* pvParameters) {
+void Task_Go_Back(void* Parameters) {
 
+	while (true) {
+
+		if (xSemaphoreTake(sem_cylinder_start_back, portMAX_DELAY) == pdTRUE){
+			gotoCylinderStart(0);
+		}
+	}
+}
+
+void vTask_TurnRejectLedOn(void* pvParameters) {
 
 	//waits for task completion
 	//time_t secs = 5; //for de 3 segundos
 	//time_t startTime = time(NULL);
 
 	while (true) {
-		xSemaphoreTake(sem_led_reject, portMAX_DELAY);
+		
+		if (xSemaphoreTake(sem_led_reject, portMAX_DELAY) != pdTRUE) {
+			continue;
 
-		for (int j = 0; j < 6;++j) {
+		}
+
+		for (int j = 0; j < 6; ++j) {
 
 
 			ledRejectOn();
@@ -127,13 +141,9 @@ void vTask_ConveyorOn(void* pvParameters) {
 
 	while (TRUE) {
 
-		xQueueSemaphoreTake(
-			sem_conveyor,
-			portMAX_DELAY
-		);
-		ConveyorOn();
-
-		//ConveyorOff();
+		if (xSemaphoreTake(sem_conveyor, portMAX_DELAY) == pdTRUE) {
+			ConveyorOn();
+		}
 	}
 }
 
@@ -146,13 +156,19 @@ void vTask_calibrate_cilinder2(void* pvParameters) {
 }
 
 void check_package_task(void* pvParameters) {
-	
+
 	uInt8 blockType;
-	
+
 	while (TRUE) {
-		xQueueSemaphoreTake(sem_check_package_start,
-			portMAX_DELAY);
-		blockType = ReadTypeBlock(); 
+
+		if (xSemaphoreTake(sem_check_package_start,
+			portMAX_DELAY) != pdTRUE) {
+			continue;
+		}
+
+		blockType = ReadTypeValue();
+		xSemaphoreGive(sem_cylinder_start_back);
+
 		xQueueSend(mbx_check_package, &blockType,
 			portMAX_DELAY);
 	}						// task completion
@@ -161,23 +177,29 @@ void check_package_task(void* pvParameters) {
 void enter_package_task(void* pvParameters) {
 
 	uInt8 blockType,
-		  blockInput;
+		blockInput;
 
 	while (TRUE) {
-		
-		blockType	  = 0;
-		blockInput	  = 0;
 
-		printf("\nInsert Block type: ");
+		blockType = 0;
+		blockInput = 0;
+
+		printf("\nInsert Block type (1, 2 or 3) or type (m) for manual control ");
 
 		std::cin >> blockInput;
-		blockInput -= ( '0' + 1 );
-		if ( blockInput < 0 || blockInput > Block3 ) {
+
+		if (blockInput == 'm') {
+			cylinderTest();
+		}
+		blockInput -= ('0' + 1);//convert to same format 
+
+
+		if (blockInput < 0 || blockInput > Block3) {//catch bad input
 			break;
 		}
 
 		xSemaphoreGive(sem_conveyor);
-
+		std::cout << "DEBUG";
 		xSemaphoreGive(sem_check_package_start);
 		//waits for task completion
 
@@ -188,9 +210,9 @@ void enter_package_task(void* pvParameters) {
 		case Block2: {printf("\nPackage received, Package Type : 2\n"); break; }
 		case Block3: {printf("\nPackage received, Package Type : 3\n"); break; }
 		}
-		if (blockType != blockInput) {   //ESTE IF NÃO TÁ A FUNCIONAR !(blockType == blockInputBit)
+		if (blockType != blockInput) {
 			xSemaphoreGive(sem_led_reject); //aciona o led piscante se input != sensores
-			printf("BLOCO ERRADO\nInserido:%d \nRecebido%d\n", blockInput + 1, blockType + 1 );
+			printf("BLOCO ERRADO\nInserido:%d \nRecebido%d\n", blockInput + 1, blockType + 1);
 			goto lixo;
 		}
 		else {
@@ -214,7 +236,7 @@ void enter_package_task(void* pvParameters) {
 				break;
 
 			default:
-				lixo:
+			lixo:
 				vTaskDelay(5000);
 				ConveyorOff();
 				break;
