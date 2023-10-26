@@ -32,7 +32,30 @@ xSemaphoreHandle sem_cylinder_start_finished;
 xQueueHandle mbx_check_package;
 xSemaphoreHandle sem_check_package_start;
 xSemaphoreHandle sem_led_reject;
-xSemaphoreHandle sem_conveyor;
+xSemaphoreHandle sem_conveyorOn;
+xSemaphoreHandle sem_conveyorOff;
+xSemaphoreHandle sem_cylinder1;
+xSemaphoreHandle sem_cylinder2;
+xSemaphoreHandle sem_list;
+xSemaphoreHandle sem_detailed_list;
+xSemaphoreHandle sem_cylinder_start_back;
+
+// tasks handler declaration
+xTaskHandle emergencyTask;
+xTaskHandle resumeTask;
+xTaskHandle taskSender;
+xTaskHandle taskEnterPack;
+xTaskHandle taskCheckPack;
+xTaskHandle taskConveyor;
+xTaskHandle taskLed;
+xTaskHandle taskGoto1;
+xTaskHandle taskGoto2;
+
+//var globais 
+int blocksRecDoc1 = 0;
+int blocksRecDoc2 = 0;
+int blocksRecDoc3 = 0;
+int blocksRegect = 0;
 
 
 void vAssertCalled(unsigned long ulLine, const char* const pcFileName);
@@ -41,14 +64,22 @@ void inicializarPortos();
 void myDaemonTaskStartupHook(void);
 void myTickHook(void);
 void myIdleHook(void);
-void vTask_calibrate_cilinder1(void* pvParameters);
-void vTask_calibrate_cilinder2(void* pvParameters);
+void vTask_move_frontBack1(void* pvParameters);
+void vTask_move_frontBack2(void* pvParameters);
 void check_package_task(void* pvParameters);
 void enter_package_task(void* pvParameters);
 void vTask_TurnRejectLedOn(void* pvParameters);
+void vTaskList(void* pvParameters);
+void vTask_Conveyor(void* pvParameters);
+void Task_Go_Back(void* Parameters);
 
-//test
-void vTask_ConveyorOn(void* pvParameters);
+//todo
+void vTask_Conveyor(void* pvParameters);
+void switch2_rising_isr(ULONGLONG lastTime);
+void switch1_rising_isr(ULONGLONG lastTime);
+void vTaskEmergency(void* pvParameters);
+void vTaskResume(void* pvParameters);
+
 
 
 int main(int argc, char** argv) {
@@ -74,28 +105,128 @@ void myDaemonTaskStartupHook(void) {
 	sem_cylinder_start_finished = xSemaphoreCreateCounting(10, 0);
 	mbx_check_package = xQueueCreate(10, sizeof(int));
 	sem_led_reject = xSemaphoreCreateBinary();
-	sem_conveyor = xSemaphoreCreateCounting(10, 0);
+	sem_conveyorOn = xSemaphoreCreateBinary();
+	sem_conveyorOff = xSemaphoreCreateBinary();
+	sem_cylinder1 = xSemaphoreCreateBinary();
+	sem_cylinder2 = xSemaphoreCreateBinary();
+	sem_list = xSemaphoreCreateBinary();
+	sem_detailed_list = xSemaphoreCreateBinary();
+	sem_cylinder_start_back = xSemaphoreCreateCounting(10, 0);
+
 
 	inicializarPortos();
 
-	//cylinder calibration tasks
-	//xTaskCreate(vTask_calibrate_cilinder1, "Clibrate Cylinder1 Task", 100, NULL, 0, NULL);
-	//xTaskCreate(vTask_calibrate_cilinder2, "Clibrate Cylinder2 Task", 100, NULL, 0, NULL);
+	//list task
+	xTaskCreate(vTaskList, "List Task", 100, NULL, 0, NULL);
+	xTaskCreate(Task_Go_Back, "Cylinder Start front to back", 1000, NULL, 1, NULL);
+
+	//cylinder tasks
+	xTaskCreate(vTask_move_frontBack1, "Goto cylinder 1 task", 100, NULL, 0, &taskGoto1);
+	xTaskCreate(vTask_move_frontBack2, "Goto cylinder 2 task", 100, NULL, 0, &taskGoto2);
 
 	//led task
-	xTaskCreate(vTask_TurnRejectLedOn, "Turn Led On Task", 100, NULL, 0, NULL);
+	xTaskCreate(vTask_TurnRejectLedOn, "Turn Led On Task", 100, NULL, 0, &taskLed);
 
 	//conveyor task
-	xTaskCreate(vTask_ConveyorOn, "Conveyor On Task", 100, NULL, 0, NULL);
+	xTaskCreate(vTask_Conveyor, "Conveyor On Task", 100, NULL, 0, &taskConveyor);
 
 	//brick input and verification tasks
 	//xTaskCreate(cylinder_start_task, "Cylinder Start Task", 100, NULL, 0, NULL);
-	xTaskCreate(check_package_task, "Check package Task", 100, NULL, 0, NULL);
-	xTaskCreate(enter_package_task, "Enter Package Task", 100, NULL, 0, NULL);
+	xTaskCreate(check_package_task, "Check package Task", 100, NULL, 0, &taskCheckPack);
+	xTaskCreate(enter_package_task, "Enter Package Task", 100, NULL, 0, &taskEnterPack);
+
+	//interrupt tasks
+	attachInterrupt(1, 4, switch1_rising_isr, RISING);
+	attachInterrupt(1, 3, switch2_rising_isr, RISING);
+	xTaskCreate(vTaskEmergency, "vTaskEmergency ", 100, NULL, 0, &emergencyTask);
+	xTaskCreate(vTaskResume, "vTaskResume ", 100, NULL, 0, &resumeTask);
 
 }
 
-void vTask_TurnRejectLedOn(void* pvParameters) {
+void Task_Go_Back(void* Parameters) {
+
+	while (true) {
+
+		if (xSemaphoreTake(sem_cylinder_start_back, portMAX_DELAY) == pdTRUE) {
+			gotoCylinderStart(0);
+		}
+	}
+}
+
+void vTaskList(void* pvParameters) {
+	
+	//While operating, the system can provide information (e.g., number of bricks delivered at dock 1)
+	while(TRUE){
+	xSemaphoreTake(sem_list, portMAX_DELAY);
+	printf("Lista: \n");
+	printf("Blocos recebido dock 1: %d:\n", blocksRecDoc1);
+	printf("Blocos recebido dock 2: %d \n", blocksRecDoc2);
+	printf("Blocos recebido dock 3: %d \n", blocksRecDoc3);
+	printf("Blocos rejeitados: %d \n",blocksRegect);
+
+	xSemaphoreTake(sem_detailed_list, portMAX_DELAY);
+	printf("Lista detalhada: \n");
+	//Show list of stored bricks (type, rejected, date when inserted).
+	//Given a brick type, shows the number of correctly delivered and rejected(bricks that are type X but the user said type Y).
+	}
+}
+
+void switch2_rising_isr(ULONGLONG lastTime) {
+	ULONGLONG time = GetTickCount64();
+	printf("\nSwitch two RISING detected at time = %llu...", time);
+	BaseType_t xYieldRequired;
+	// Resume the suspended task.
+	xYieldRequired = xTaskResumeFromISR(resumeTask);
+}
+
+void switch1_rising_isr(ULONGLONG lastTime) {
+	// GetTickCount64() current time in miliseconds
+	// since the system has started...
+	ULONGLONG time = GetTickCount64();
+	printf("\nSwitch one RISING detected at time = %llu...\n", time);
+	BaseType_t xYieldRequired;
+	// Resume the suspended task.
+	xYieldRequired = xTaskResumeFromISR(emergencyTask);
+}
+
+void vTaskEmergency(void* pvParameters) {
+	// The task being suspended and resumed.
+	for (;; ) {
+		// The task suspends itself.
+		vTaskSuspend(NULL);
+		
+		xSemaphoreGive(sem_conveyorOff);
+
+		vTaskSuspend(taskConveyor);
+		vTaskSuspend(taskLed);
+		//vTaskSuspend(taskCheckPack);
+		vTaskSuspend(taskEnterPack);
+		
+		// The task is now suspended, so will
+		//not reach here until the ISR resumes it.
+			printf("\n **** EMERGENCY task\n");
+	}
+}
+
+void vTaskResume(void* pvParameters) {
+	// The task being suspended and resumed.
+	for (;; ) {
+		
+		// The task suspends itself.
+		vTaskSuspend(NULL);
+
+		vTaskResume(taskConveyor);
+		vTaskResume(taskLed);
+		//vTaskResume(taskCheckPack);
+		vTaskSuspend(taskEnterPack);
+	
+		// The task is now suspended, so will
+		//not reach here until the ISR resumes it.
+		printf("\n **** RESUME task\n");
+
+	}
+}
+void vTask_TurnRejectLedOn(void* pvParameters){
 
 
 	//waits for task completion
@@ -104,6 +235,7 @@ void vTask_TurnRejectLedOn(void* pvParameters) {
 
 	while (true) {
 		xSemaphoreTake(sem_led_reject, portMAX_DELAY);
+		blocksRegect++;
 
 		for (int j = 0; j < 6;++j) {
 
@@ -119,36 +251,48 @@ void vTask_TurnRejectLedOn(void* pvParameters) {
 
 }
 
-void vTask_ConveyorOn(void* pvParameters) {
+void vTask_Conveyor(void* pvParameters) {
 
 	while (TRUE) {
 
-		xQueueSemaphoreTake(
-			sem_conveyor,
-			portMAX_DELAY
-		);
-		ConveyorOn();
-
+		if (xSemaphoreTake(sem_conveyorOn, portMAX_DELAY) == pdTRUE) {
+			ConveyorOn();
+		}
+		//xSemaphoreTake(sem_conveyorOff, portMAX_DELAY);
 		//ConveyorOff();
+
 	}
 }
 
-void vTask_calibrate_cilinder1(void* pvParameters) {
-	cylinder1FrontBack();
+void vTask_move_frontBack1(void* pvParameters) {
+	while(TRUE){
+		if (xSemaphoreTake(sem_cylinder1, portMAX_DELAY) == pdTRUE) {
+			cylinder1FrontBack();
+		}
+	}
 }
 
-void vTask_calibrate_cilinder2(void* pvParameters) {
-	cylinder2FrontBack();
-}
-
-void check_package_task(void* pvParameters) {
-	
-	uInt8 blockType;
-	
+void vTask_move_frontBack2(void* pvParameters)  {
 	while (TRUE) {
-		xQueueSemaphoreTake(sem_check_package_start,
-			portMAX_DELAY);
-		blockType = ReadTypeBlock(); 
+		if (xSemaphoreTake(sem_cylinder2, portMAX_DELAY) == pdTRUE) {
+			cylinder2FrontBack();
+		}
+	}
+}
+void check_package_task(void* pvParameters) {
+
+	uInt8 blockType;
+
+	while (TRUE) {
+
+		if (xSemaphoreTake(sem_check_package_start,
+			portMAX_DELAY) != pdTRUE) {
+			continue;
+		}
+
+		blockType = ReadTypeValue();
+		xSemaphoreGive(sem_cylinder_start_back);
+
 		xQueueSend(mbx_check_package, &blockType,
 			portMAX_DELAY);
 	}						// task completion
@@ -164,17 +308,29 @@ void enter_package_task(void* pvParameters) {
 		blockType  = 0;
 		blockInput = 0;
 
-		printf("\nInsert Block type: ");
+		xSemaphoreGive(sem_list);
 
+		vTaskDelay(50);//50ms
+
+		printf("\nType (1, 2 or 3) to Insert Block, type (m) for manual control or type (l) for detailed list ");
+		
 		std::cin >> blockInput;
+
+		if (blockInput == 'm') {
+			cylinderTest();
+		}
+
+		if (blockInput == 'l') {
+			xSemaphoreGive(sem_detailed_list);
+		}
 		blockInput -= ( '0' + 1 );//convert to same format 
+
 
 		if ( blockInput < 0 || blockInput > Block3 ) {//catch bad input
 			break;
 		}
-
-		xSemaphoreGive(sem_conveyor);
-
+		
+		xSemaphoreGive(sem_conveyorOn);
 		std::cout << "DEBUG";
 		xSemaphoreGive(sem_check_package_start);
 		//waits for task completion
@@ -198,25 +354,25 @@ void enter_package_task(void* pvParameters) {
 			case Block1:
 
 				senseBlockCylinder1();
-				ConveyorOff();
-				cylinder1FrontBack();
-				//ConveyorOn();
+				xSemaphoreGive(sem_conveyorOff);
+				xSemaphoreGive(sem_cylinder1);
+				blocksRecDoc1++;
 				break;
 
 			case Block2:
 
 				senseBlockCylinder2();
-				ConveyorOff();
-				cylinder2FrontBack();
-				//ConveyorOn();
+				xSemaphoreGive(sem_conveyorOff);
+				xSemaphoreGive(sem_cylinder2);
+				blocksRecDoc2++;
 				break;
 
 			default:
 				lixo:
 				vTaskDelay(5000);
-				ConveyorOff();
+				xSemaphoreGive(sem_conveyorOff);
+				blocksRecDoc3++;
 				break;
-
 			}
 		}
 	}

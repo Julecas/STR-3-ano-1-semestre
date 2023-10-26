@@ -135,9 +135,12 @@ void ConveyorOff();
 void ConveyorOn();
 
 /******************************************************************************************************************************
-* ReadTypeBlock- function that returns type of block
+* ReadTypeValue- function that returns type of block
 *******************************************************************************************************************************/
-uInt8 ReadTypeBlock();
+uInt8 ReadTypeValue();
+
+void cylinderStartFrontBack();
+
 
 //DEBUG
 // Put here the other function headers!!!
