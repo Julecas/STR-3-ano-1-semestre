@@ -36,11 +36,24 @@ xSemaphoreHandle sem_conveyor;
 xSemaphoreHandle sem_list;
 xSemaphoreHandle sem_cylinder_start_back;
 
+// tasks handler declaration
+xTaskHandle emergencyTask;
+xTaskHandle resumeTask;
+xTaskHandle taskSender;
+xTaskHandle taskEnterPack;
+xTaskHandle taskCheckPack;
+xTaskHandle taskConveyor;
+xTaskHandle taskLed;
+xTaskHandle taskGoBack;
+
 //var globais 
 int blocksRecDoc1 = 0;
 int blocksRecDoc2 = 0;
 int blocksRecDoc3 = 0;
 int blocksRegect = 0;
+uInt8 p0 = 0;
+uInt8 p1 = 0;
+uInt8 p2 = 0;
 
 
 void vAssertCalled(unsigned long ulLine, const char* const pcFileName);
@@ -58,8 +71,12 @@ void vTaskList(void* pvParameters);
 void Task_Go_Back(void* Parameters);
 
 
-//test
+//todo
 void vTask_ConveyorOn(void* pvParameters);
+void switch2_rising_isr(ULONGLONG lastTime);
+void switch1_rising_isr(ULONGLONG lastTime);
+void vTaskEmergency(void* pvParameters);
+void vTaskResume(void* pvParameters);
 
 
 int main(int argc, char** argv) {
@@ -79,7 +96,6 @@ int main(int argc, char** argv) {
 
 void myDaemonTaskStartupHook(void) {
 
-
 	sem_cylinder_start_start = xSemaphoreCreateCounting(10, 0);
 	sem_check_package_start = xSemaphoreCreateCounting(10, 0);
 	sem_cylinder_start_finished = xSemaphoreCreateCounting(10, 0);
@@ -92,21 +108,27 @@ void myDaemonTaskStartupHook(void) {
 	inicializarPortos();
 
 	//cyl tasks
-	xTaskCreate(Task_Go_Back, "Cylinder Start front to back", 100, NULL, 0, NULL);
+	xTaskCreate(Task_Go_Back, "Cylinder Start front to back", 1000, NULL, 1, &taskGoBack);
 
 	//list task
 	xTaskCreate(vTaskList, "List Task", 100, NULL, 0, NULL);
 
 	//led task
-	xTaskCreate(vTask_TurnRejectLedOn, "Turn Led On Task", 100, NULL, 0, NULL);
+	xTaskCreate(vTask_TurnRejectLedOn, "Turn Led On Task", 100, NULL, 0, &taskLed);
 
 	//conveyor task
-	xTaskCreate(vTask_ConveyorOn, "Conveyor On Task", 100, NULL, 0, NULL);
+	xTaskCreate(vTask_ConveyorOn, "Conveyor On Task", 100, NULL, 0, &taskConveyor);
 
 	//brick input and verification tasks
 	//xTaskCreate(cylinder_start_task, "Cylinder Start Task", 100, NULL, 0, NULL);
-	xTaskCreate(check_package_task, "Check package Task", 100, NULL, 0, NULL);
-	xTaskCreate(enter_package_task, "Enter Package Task", 100, NULL, 0, NULL);
+	xTaskCreate(check_package_task, "Check package Task", 100, NULL, 0, &taskCheckPack);
+	xTaskCreate(enter_package_task, "Enter Package Task", 100, NULL, 0, &taskEnterPack);
+
+	//interrupt tasks
+	attachInterrupt(1, 4, switch1_rising_isr, RISING);
+	attachInterrupt(1, 3, switch2_rising_isr, RISING);
+	xTaskCreate(vTaskEmergency, "vTaskEmergency ", 100, NULL, 0, &emergencyTask);
+	xTaskCreate(vTaskResume, "vTaskResume ", 100, NULL, 0, &resumeTask);
 
 
 
@@ -119,6 +141,76 @@ void Task_Go_Back(void* Parameters) {
 			gotoCylinderStart(0);
 		}
 	}
+}
+
+void vTaskEmergency(void* pvParameters) {
+	// The task being suspended and resumed.
+	for (;; ) {
+		// The task suspends itself.
+		vTaskSuspend(NULL);
+		//GUARDAR BITS 
+		uInt8 p0 = readDigitalU8(0);
+		uInt8 p1 = readDigitalU8(1);
+		uInt8 p2 = readDigitalU8(2);
+		
+		ConveyorOff();
+		stopCylinderStart();
+		stopCylinder1();
+		stopCylinder2();
+
+
+		vTaskSuspend(taskConveyor);
+		vTaskSuspend(taskLed);
+		vTaskSuspend(taskCheckPack);
+		vTaskSuspend(taskEnterPack);
+
+		// The task is now suspended, so will
+		//not reach here until the ISR resumes it.
+		printf("\n **** EMERGENCY task\n");
+	}
+}
+
+void vTaskResume(void* pvParameters) {
+	// The task being suspended and resumed.
+	for (;; ) {
+
+		// The task suspends itself.
+		vTaskSuspend(NULL);
+
+		vTaskResume(taskConveyor);
+		vTaskResume(taskLed);
+		vTaskResume(taskCheckPack);
+		vTaskSuspend(taskEnterPack);
+
+		//REPOR BITS
+		writeDigitalU8(0, p0);    // update ports
+		writeDigitalU8(1, p1);
+		writeDigitalU8(2, p2);
+
+
+		// The task is now suspended, so will
+		//not reach here until the ISR resumes it.
+		printf("\n **** RESUME task\n");
+
+	}
+}
+
+void switch2_rising_isr(ULONGLONG lastTime) {
+	ULONGLONG time = GetTickCount64();
+	printf("\nSwitch two RISING detected at time = %llu...", time);
+	BaseType_t xYieldRequired;
+	// Resume the suspended task.
+	xYieldRequired = xTaskResumeFromISR(resumeTask);
+}
+
+void switch1_rising_isr(ULONGLONG lastTime) {
+	// GetTickCount64() current time in miliseconds
+	// since the system has started...
+	ULONGLONG time = GetTickCount64();
+	printf("\nSwitch one RISING detected at time = %llu...\n", time);
+	BaseType_t xYieldRequired;
+	// Resume the suspended task.
+	xYieldRequired = xTaskResumeFromISR(emergencyTask);
 }
 
 void vTaskList(void* pvParameters) {

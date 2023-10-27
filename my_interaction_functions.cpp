@@ -207,6 +207,7 @@ void gotoCylinderStart(int pos) {
 		while (getCylinderStartPos() != 1) {
 			continue;
 		}
+		vTaskDelay(50);
 		stopCylinderStart();
 		return;
 	}
