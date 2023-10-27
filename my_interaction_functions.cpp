@@ -207,7 +207,6 @@ void gotoCylinderStart(int pos) {
 		while (getCylinderStartPos() != 1) {
 			continue;
 		}
-		vTaskDelay(50);
 		stopCylinderStart();
 		return;
 	}
@@ -302,11 +301,11 @@ uInt8 ReadTypeValue() {
 		p1 = readDigitalU8(1);
 		p1 &= 0b01100000;
 		c |= p1;
-		printf("lido %d\n", ((c & 0b00100000) > 0) + (c >> 6));
+		//printf("lido %d\n", ((c & 0b00100000) > 0) + (c >> 6));
 
 
 	}
-	vTaskDelay(10);
+	vTaskDelay(50);
 
 	return
 		((c & 0b00100000) > 0) + (c >> 6);//counts how many bits == 1

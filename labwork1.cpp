@@ -29,12 +29,18 @@ extern "C" {
 //Semaphores and Mailboxes declaration
 xSemaphoreHandle sem_cylinder_start_start;
 xSemaphoreHandle sem_cylinder_start_finished;
-xQueueHandle mbx_check_package;
 xSemaphoreHandle sem_check_package_start;
 xSemaphoreHandle sem_led_reject;
 xSemaphoreHandle sem_conveyor;
 xSemaphoreHandle sem_list;
 xSemaphoreHandle sem_cylinder_start_back;
+
+//mailboxes
+xQueueHandle mbx_check_package;
+xQueueHandle mbx_blocksRecDoc1;
+xQueueHandle mbx_blocksRecDoc2;
+xQueueHandle mbx_blocksRecDoc3;
+xQueueHandle mbx_blocksRegect;
 
 // tasks handler declaration
 xTaskHandle emergencyTask;
@@ -47,10 +53,6 @@ xTaskHandle taskLed;
 xTaskHandle taskGoBack;
 
 //var globais 
-int blocksRecDoc1 = 0;
-int blocksRecDoc2 = 0;
-int blocksRecDoc3 = 0;
-int blocksRegect = 0;
 uInt8 p0 = 0;
 uInt8 p1 = 0;
 uInt8 p2 = 0;
@@ -62,17 +64,14 @@ void inicializarPortos();
 void myDaemonTaskStartupHook(void);
 void myTickHook(void);
 void myIdleHook(void);
-void vTask_calibrate_cilinder1(void* pvParameters);
-void vTask_calibrate_cilinder2(void* pvParameters);
 void check_package_task(void* pvParameters);
 void enter_package_task(void* pvParameters);
 void vTask_TurnRejectLedOn(void* pvParameters);
 void vTaskList(void* pvParameters);
 void Task_Go_Back(void* Parameters);
-
+void vTask_ConveyorOn(void* pvParameters);
 
 //todo
-void vTask_ConveyorOn(void* pvParameters);
 void switch2_rising_isr(ULONGLONG lastTime);
 void switch1_rising_isr(ULONGLONG lastTime);
 void vTaskEmergency(void* pvParameters);
@@ -99,11 +98,16 @@ void myDaemonTaskStartupHook(void) {
 	sem_cylinder_start_start = xSemaphoreCreateCounting(10, 0);
 	sem_check_package_start = xSemaphoreCreateCounting(10, 0);
 	sem_cylinder_start_finished = xSemaphoreCreateCounting(10, 0);
-	mbx_check_package = xQueueCreate(10, sizeof(int));
 	sem_led_reject = xSemaphoreCreateBinary();
 	sem_conveyor = xSemaphoreCreateCounting(10, 0);
 	sem_list = xSemaphoreCreateBinary();
 	sem_cylinder_start_back = xSemaphoreCreateCounting(10, 0);
+
+	mbx_check_package = xQueueCreate(10, sizeof(int));
+	mbx_blocksRecDoc1 = xQueueCreate(1, sizeof(int));
+	mbx_blocksRecDoc2 = xQueueCreate(1, sizeof(int));
+	mbx_blocksRecDoc3 = xQueueCreate(1, sizeof(int));
+	mbx_blocksRegect = xQueueCreate(1, sizeof(int));
 
 	inicializarPortos();
 
@@ -177,15 +181,16 @@ void vTaskResume(void* pvParameters) {
 		// The task suspends itself.
 		vTaskSuspend(NULL);
 
-		vTaskResume(taskConveyor);
-		vTaskResume(taskLed);
-		vTaskResume(taskCheckPack);
-		vTaskSuspend(taskEnterPack);
-
 		//REPOR BITS
 		writeDigitalU8(0, p0);    // update ports
 		writeDigitalU8(1, p1);
 		writeDigitalU8(2, p2);
+
+
+		vTaskResume(taskConveyor);
+		vTaskResume(taskLed);
+		vTaskResume(taskCheckPack);
+		vTaskResume(taskEnterPack);
 
 
 		// The task is now suspended, so will
@@ -215,9 +220,19 @@ void switch1_rising_isr(ULONGLONG lastTime) {
 
 void vTaskList(void* pvParameters) {
 
+	int blocksRecDoc1 = 0;
+	int blocksRecDoc2 = 0;
+	int blocksRecDoc3 = 0;
+	int blocksRegect = 0;
+
 	//While operating, the system can provide information (e.g., number of bricks delivered at dock 1)
 	while (TRUE) {
+		
 		xSemaphoreTake(sem_list, portMAX_DELAY);
+		xQueueReceive(mbx_blocksRecDoc1, &blocksRecDoc1, portMAX_DELAY);
+		xQueueReceive(mbx_blocksRecDoc2, &blocksRecDoc2, portMAX_DELAY);
+		xQueueReceive(mbx_blocksRecDoc3, &blocksRecDoc3, portMAX_DELAY);
+		xQueueReceive(mbx_blocksRegect, &blocksRegect, portMAX_DELAY);
 		printf("Lista: \n");
 		printf("Blocos recebido dock 1: %d \n", blocksRecDoc1);
 		printf("Blocos recebido dock 2: %d \n", blocksRecDoc2);
@@ -263,13 +278,6 @@ void vTask_ConveyorOn(void* pvParameters) {
 	}
 }
 
-void vTask_calibrate_cilinder1(void* pvParameters) {
-	cylinder1FrontBack();
-}
-
-void vTask_calibrate_cilinder2(void* pvParameters) {
-	cylinder2FrontBack();
-}
 
 void check_package_task(void* pvParameters) {
 
@@ -295,11 +303,20 @@ void enter_package_task(void* pvParameters) {
 	uInt8 blockType,
 		  blockInput;
 
+	int blocksRecDoc1 = 0;
+	int blocksRecDoc2 = 0;
+	int blocksRecDoc3 = 0;
+	int blocksRegect = 0;
+
 	while (TRUE) {
 		
 		blockType  = 0;
 		blockInput = 0;
 
+		xQueueSend(mbx_blocksRecDoc1, &blocksRecDoc1, portMAX_DELAY);
+		xQueueSend(mbx_blocksRecDoc2, &blocksRecDoc2, portMAX_DELAY);
+		xQueueSend(mbx_blocksRecDoc3, &blocksRecDoc3, portMAX_DELAY);
+		xQueueSend(mbx_blocksRegect, &blocksRegect, portMAX_DELAY);
 		xSemaphoreGive(sem_list);
 
 		vTaskDelay(50);//50ms
@@ -332,6 +349,7 @@ void enter_package_task(void* pvParameters) {
 		if (blockType != blockInput) {  
 			xSemaphoreGive(sem_led_reject); //aciona o led piscante se input != sensores
 			printf("BLOCO ERRADO\nInserido:%d \nRecebido%d\n", blockInput + 1, blockType + 1 );
+			//blocksRegect++;
 			blocksRegect++;
 			goto lixo;
 		}
