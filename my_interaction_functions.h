@@ -12,6 +12,8 @@ const uInt8 Block3 = 0x2;
 
 void senseBlockCylinder2();
 void senseBlockCylinder1();
+bool senseBlockCylinder1value();
+
 
 // given a byte value, returns the value of its bit n
 int getBitValue(uInt8 value, uInt8 bit_n);

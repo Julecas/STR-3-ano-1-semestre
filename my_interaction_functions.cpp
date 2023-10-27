@@ -40,16 +40,19 @@ void senseBlockCylinder2() {
 }
 void senseBlockCylinder1() {
 
-	uInt8 p0;
-
 	while (TRUE) {
 
-		p0 = readDigitalU8(0); // read port 1
-
-		if (getBitValue(p0, 0)) {
+		if (senseBlockCylinder1value()) {
 			return;
 		}
 	}
+}
+
+bool senseBlockCylinder1value() {
+
+	//Return true if block is under sensor
+	return readDigitalU8(0) & 1 ? true : false;
+
 }
 
 void ledRejectOn() {
