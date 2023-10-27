@@ -23,6 +23,7 @@ extern "C" {
 void Conveyor(bool b);
 void moveCylinder(int port, int bitF, bool Fv, int bitB, bool Fb);
 
+
 void senseBlockCylinder2() {
 
 	uInt8 p1;
@@ -68,6 +69,11 @@ void ledRejectOff() {
 	taskEXIT_CRITICAL();
 }
 
+void cylinderStartFrontBack() {
+
+	gotoCylinderStart(1);
+	gotoCylinderStart(0);
+}
 
 
 void cylinder1FrontBack() {
@@ -201,7 +207,6 @@ void gotoCylinderStart(int pos) {
 		while (getCylinderStartPos() != 1) {
 			continue;
 		}
-		vTaskDelay(250); //1s
 		stopCylinderStart();
 		return;
 	}
@@ -284,37 +289,26 @@ void Conveyor(bool b) {
 }
 
 
-uInt8 ReadTypeBlock() {
+uInt8 ReadTypeValue() {
 
 	uInt8 p1,
 		c = 0;
-		//p2 = readDigitalU8(0);
+
 	moveCylinderStartFront(); //cylinder 0
 
-	while ( true ) {
+	while (getCylinderStartPos() != 1) {
 
-		//p2 = readDigitalU8(0);
 		p1 = readDigitalU8(1);
 		p1 &= 0b01100000;
 		c |= p1;
-		
-		if (getCylinderStartPos() == 1) {
+		printf("lido %d\n", ((c & 0b00100000) > 0) + (c >> 6));
 
-			vTaskDelay(100);
-			p1 = readDigitalU8(1);
-			p1 &= 0b01100000;
-			c |= p1;
-			break;
-		}
+
 	}
+	vTaskDelay(10);
 
-	gotoCylinderStart(0);
-
-	uInt8 ret =
+	return
 		((c & 0b00100000) > 0) + (c >> 6);//counts how many bits == 1
-
-
-	return ret;
 
 }
 
