@@ -3,9 +3,9 @@
 extern "C" {
 #include <interface.h>
 }
-const uInt8 Block1 = 0x0;
-const uInt8 Block2 = 0x1;
-const uInt8 Block3 = 0x2;
+#define Block1  0
+#define Block2  1
+#define Block3  2
 
 
 //sensor functions
@@ -13,7 +13,6 @@ const uInt8 Block3 = 0x2;
 void senseBlockCylinder2();
 void senseBlockCylinder1();
 bool senseBlockCylinder1value();
-
 
 // given a byte value, returns the value of its bit n
 int getBitValue(uInt8 value, uInt8 bit_n);
@@ -142,7 +141,6 @@ void ConveyorOn();
 uInt8 ReadTypeValue();
 
 void cylinderStartFrontBack();
-
 
 //DEBUG
 // Put here the other function headers!!!
