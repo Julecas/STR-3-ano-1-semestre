@@ -11,19 +11,18 @@
 
 
 extern "C" {
-#include <FreeRTOS.h>
-#include <task.h>
-#include <timers.h>
-#include <semphr.h>
-#include <interface.h>	
-#include <interrupts.h>
+	#include <FreeRTOS.h>
+	#include <task.h>
+	#include <timers.h>
+	#include <semphr.h>
+	#include <interface.h>	
+	#include <interrupts.h>
 }
 
 
 void Conveyor(bool b);
-inline void moveCylinder(int port, int bitF, bool Fv, int bitB, bool Fb);
-void Task_Go_FrontrBack(void* Parameters);
-uInt8 ReadTypeValue();
+void moveCylinder(int port, int bitF, bool Fv, int bitB, bool Fb);
+
 
 void senseBlockCylinder2() {
 
@@ -33,54 +32,53 @@ void senseBlockCylinder2() {
 
 		p1 = readDigitalU8(1); // read port 1
 
-		if (getBitValue(p1, 7)) {  //get bit 7 active high
+		if( getBitValue(p1, 7) ) {  //get bit 7 active high
 			return;
 		}
 	}
 }
-void senseBlockCylinder1() {
 
-	uInt8 p0;
+void senseBlockCylinder1() {
 
 	while (TRUE) {
 
-		p0 = readDigitalU8(0); // read port 1
-
-		if (getBitValue(p0, 0)) {
+		if (senseBlockCylinder1value()) {
 			return;
 		}
 	}
+}
+
+bool senseBlockCylinder1value() {
+
+	//Return true if block is under sensor
+	return readDigitalU8(0) & 1 ? true : false;
+
 }
 
 void ledRejectOn() {
 
 	taskENTER_CRITICAL();
-
 	uInt8 p = readDigitalU8(2); // read port 2
 	setBitValue(&p, 7, 1);
 	writeDigitalU8(2, p);
-
 	taskEXIT_CRITICAL();
 }
 
 void ledRejectOff() {
 
 	taskENTER_CRITICAL();
-
 	uInt8 p = readDigitalU8(2); // read port 2
 	setBitValue(&p, 7, 0);
 	writeDigitalU8(2, p);
-
 	taskEXIT_CRITICAL();
 }
-
-
 
 void cylinderStartFrontBack() {
 
 	gotoCylinderStart(1);
 	gotoCylinderStart(0);
 }
+
 
 void cylinder1FrontBack() {
 
@@ -143,24 +141,20 @@ void moveCylinder2Front() {
 }
 
 //moveCylinder(2, 0, 0, 1, 0);
-inline void moveCylinder(int port, int bitF, bool Fv, int bitB, bool Fb) {
+void moveCylinder(int port, int bitF, bool Fv, int bitB, bool Fb) {
 
 	taskENTER_CRITICAL();
-
 	uInt8 p = readDigitalU8(port); // read port 
 	setBitValue(&p, bitF, Fv);	  // Move front 
 	setBitValue(&p, bitB, Fb);   // Move back
 	writeDigitalU8(port, p);    // update port
-
 	taskEXIT_CRITICAL();
 }
 
 
 int getCylinderStartPos() {
 	//cylinder 0 sensor
-
 	uInt8 p0 = readDigitalU8(0);
-
 	if (getBitValue(p0, 6)) //back
 		return 0;
 	if (getBitValue(p0, 5)) //front
@@ -217,7 +211,6 @@ void gotoCylinderStart(int pos) {
 		while (getCylinderStartPos() != 1) {
 			continue;
 		}
-		//vTaskDelay(50); 
 		stopCylinderStart();
 		return;
 	}
@@ -294,7 +287,7 @@ void Conveyor(bool b) {
 	uInt8 p = readDigitalU8(2); // read port 2
 	setBitValue(&p, 2, b);
 	writeDigitalU8(2, p);
-
+	
 	taskEXIT_CRITICAL();
 
 }
@@ -312,9 +305,11 @@ uInt8 ReadTypeValue() {
 		p1 = readDigitalU8(1);
 		p1 &= 0b01100000;
 		c |= p1;
+		//printf("lido %d\n", ((c & 0b00100000) > 0) + (c >> 6));
+
 
 	}
-	vTaskDelay(10);
+	vTaskDelay(20);
 
 	return
 		((c & 0b00100000) > 0) + (c >> 6);//counts how many bits == 1
@@ -327,13 +322,12 @@ void cylinderTest() {
 	while (TRUE) {
 
 		tecla = _getch();
-
 		switch (tecla) {
 		case 'q': {
-			moveCylinderStartFront();
-			//while (tecla == 'q') {
-			tecla = _getch();
-			//}
+			moveCylinderStartFront(); 
+			while (tecla == 'q') {
+				tecla = _getch();
+			}
 			stopCylinderStart();
 			break;
 		}
@@ -347,7 +341,7 @@ void cylinderTest() {
 		}
 		case 'w': {
 			moveCylinder1Front();
-			while (tecla == 'w') {
+			while (tecla == 'a') {
 				tecla = _getch();
 			}
 			stopCylinder1();
@@ -355,7 +349,7 @@ void cylinderTest() {
 		}
 		case 's': {
 			moveCylinder1Back();
-			while (tecla == 's') {
+			while (tecla == 'a') {
 				tecla = _getch();
 			}
 			stopCylinder1();
@@ -363,7 +357,7 @@ void cylinderTest() {
 		}
 		case 'e': {
 			moveCylinder2Front();
-			while (tecla == 'e') {
+			while (tecla == 'a') {
 				tecla = _getch();
 			}
 			stopCylinder2();
@@ -371,18 +365,18 @@ void cylinderTest() {
 		}
 		case 'd': {
 			moveCylinder2Back();
-			while (tecla == 'd') {
+			while (tecla == 'a') {
 				tecla = _getch();
 			}
 			stopCylinder2();
 			break;
 		}
-		case 'r': {gotoCylinderStart(0);	break; }
-		case 't': {gotoCylinderStart(1);	break; }
-		case 'f': {gotoCylinder1(0);		break; }
-		case 'g': {gotoCylinder1(1); 		break; }
-		case 'v': {gotoCylinder2(0);		break; }
-		case 'b': {gotoCylinder2(1);		break; }
+		case 'r': {gotoCylinderStart(0);	break;}
+		case 't': {gotoCylinderStart(1);	break;}
+		case 'f': {gotoCylinder1(0);		break;}
+		case 'g': {gotoCylinder1(1); 		break;}
+		case 'v': {gotoCylinder2(0);		break;}
+		case 'b': {gotoCylinder2(1);		break;}
 		default: return;
 		}
 	}
