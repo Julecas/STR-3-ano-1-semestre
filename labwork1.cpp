@@ -4,13 +4,15 @@
 //DEBUG
 #include <bitset>
 
-#include <time.h>
+//#include <time.h>
 #include <conio.h>
 #include <stdlib.h>
 #include <windows.h> //for Sleep function
 #include <stdio.h>
 #include <my_interaction_functions.h>
 #include <iostream>
+#include <string>
+#include <ctime>
 
 extern "C" {
 	#include <FreeRTOS.h>
@@ -38,13 +40,11 @@ xSemaphoreHandle sem_Block1;
 xSemaphoreHandle sem_Block2;
 xSemaphoreHandle sem_Lixo;
 xSemaphoreHandle sem_conveyor_off;
+xSemaphoreHandle sem_hist;
 
 //mailboxes
 xQueueHandle mbx_check_package;
-xQueueHandle mbx_blocksRecDoc1;
-xQueueHandle mbx_blocksRecDoc2;
-xQueueHandle mbx_blocksRecDoc3;
-xQueueHandle mbx_blocksRegect;
+xQueueHandle mbx_blockstat;
 xQueueHandle mbx_p0;
 xQueueHandle mbx_p1;
 xQueueHandle mbx_p2;
@@ -59,18 +59,18 @@ xTaskHandle taskConveyor;
 xTaskHandle taskLedInt;
 xTaskHandle taskLedReject;
 xTaskHandle taskGoBack;
-//TODO
 xTaskHandle taskLixo;
 xTaskHandle taskBlock1;
 xTaskHandle taskBlock2;
 xTaskHandle task_Cylinder1_sen;
+xTaskHandle task_hist;
 
 
 struct strj {
 
-	uInt8		type;
-	bool		rejected;
-	ULONGLONG	date;
+	uInt8	type;
+	bool	rejected;
+	time_t	date;
 
 	// Constructor to set default values
 	strj() : type(0), rejected(false), date(0) {}
@@ -81,10 +81,10 @@ typedef struct {
 	int accepted = 0;
 	int rejected = 0;
 
-}stats[4];
+}stats[3];
 
 
-static void  initialiseHeap(void);
+static void  initialiseHeap (void);
 void vAssertCalled			(unsigned long ulLine, const char* const pcFileName);
 void inicializarPortos		();
 void myDaemonTaskStartupHook(void);
@@ -105,6 +105,7 @@ void switch2_rising_isr		(ULONGLONG lastTime);
 void switch1_rising_isr		(ULONGLONG lastTime);
 void vTaskEmergency			(void* pvParameters);
 void vTaskResume			(void* pvParameters);
+void show_hist				(strj inv[MAXBLOC], int inv_pos);
 
 
 int main(int argc, char** argv) {
@@ -114,18 +115,17 @@ int main(int argc, char** argv) {
 
 	vApplicationDaemonTaskStartupHook = &myDaemonTaskStartupHook;
 
-	//vApplicationTickHook              = &myTickHook;
 	//vApplicationIdleHook              = &myIdleHook;
-
+	//vApplicationTickHook              = &myTickHook;
+	
 	vTaskStartScheduler();
-
 	closeChannels();
 	return 0;
 }
 
 void myDaemonTaskStartupHook(void) {
-
-	sem_check_package_start	= xSemaphoreCreateBinary();
+	
+	sem_check_package_start	= xSemaphoreCreateCounting(10, 0);
 	sem_led_reject			= xSemaphoreCreateBinary();
 	sem_conveyor			= xSemaphoreCreateCounting(10, 0);
 	sem_list				= xSemaphoreCreateBinary();
@@ -135,12 +135,10 @@ void myDaemonTaskStartupHook(void) {
 	sem_Block2				= xSemaphoreCreateCounting(10, 0);
 	sem_Lixo				= xSemaphoreCreateCounting(10, 0);
 	sem_conveyor_off		= xSemaphoreCreateCounting(10, 0);
+	sem_hist				= xSemaphoreCreateBinary();
 
 	mbx_check_package	= xQueueCreate(10, sizeof(int));
-	mbx_blocksRecDoc1	= xQueueCreate(1,  sizeof(int));
-	mbx_blocksRecDoc2	= xQueueCreate(1,  sizeof(int));
-	mbx_blocksRecDoc3	= xQueueCreate(1,  sizeof(int));
-	mbx_blocksRegect	= xQueueCreate(1,  sizeof(int));
+	mbx_blockstat		= xQueueCreate(1,  sizeof(stats*));
 	mbx_p0				= xQueueCreate(1,  sizeof(int));
 	mbx_p1				= xQueueCreate(1,  sizeof(int));
 	mbx_p2				= xQueueCreate(1,  sizeof(int));
@@ -149,12 +147,12 @@ void myDaemonTaskStartupHook(void) {
 	inicializarPortos();
 
 	//cyl tasks	
-	
-	xTaskCreate(Task_Go_Back, "Cylinder Start front to back", 1000, NULL, 2, &taskGoBack);
+
+	xTaskCreate(Task_Go_Back, "Cylinder Start front to back", 1000, NULL, 1, &taskGoBack);
 	xTaskCreate(Task_Cylinder1_sen, "Turn Led On Task", 100, NULL, 0, &task_Cylinder1_sen);
-	xTaskCreate(Task_Block1, "Turn Led On Task", 100, NULL, 0, &taskBlock1);
-	xTaskCreate(Task_Block2, "Turn Led On Task", 100, NULL, 0, &taskBlock1);
-	xTaskCreate(Task_Lixo, "Turn Led On Task", 100, NULL, 0, &taskLixo);
+	xTaskCreate(Task_Block1, "Process blocks type 1", 100, NULL, 0, &taskBlock1);
+	xTaskCreate(Task_Block2, "Process blocks type 2", 100, NULL, 0, &taskBlock2);
+	xTaskCreate(Task_Lixo, "Process blocks type 3 and trash", 100, NULL, 0, &taskLixo);
 
 	//list task
 	xTaskCreate(vTaskList, "List Task", 100, NULL, 0, NULL);
@@ -193,7 +191,14 @@ void Task_Cylinder1_sen(void* Parameters) {
 	while (true) {
 
 		if (senseBlockCylinder1value()) {
+			
 			xSemaphoreGive(sem_cylinder1_sen);
+
+			//so it doesnt give too many semaphores
+			while (senseBlockCylinder1value()) {
+				continue;
+			}
+
 		}
 	}
 }
@@ -202,12 +207,17 @@ void Task_Block1(void* Parameters) {
 
 	while (true) {
 
-		if (xSemaphoreTake(sem_Block1, portMAX_DELAY) == true) {
+		if (xSemaphoreTake(sem_Block1, portMAX_DELAY) == pdTRUE) {
 
+			std::cout << "1\n";
 			senseBlockCylinder1();
+			std::cout << "2\n";
 			ConveyorOff();
+			std::cout << "3\n";
 			cylinder1FrontBack();
+			std::cout << "4\n";
 			xSemaphoreGive(sem_conveyor_off);
+			std::cout << "5\n";
 		}
 	}
 }
@@ -215,9 +225,10 @@ void Task_Block1(void* Parameters) {
 void Task_Block2(void* Parameters) {
 
 	while (true) {
+		
+		if (xSemaphoreTake(sem_Block2, portMAX_DELAY) == pdTRUE){
 
-		if (xSemaphoreTake(sem_Block2, portMAX_DELAY) == true) {
-
+			vTaskDelay(100);
 			senseBlockCylinder2();
 			ConveyorOff();
 			cylinder2FrontBack();
@@ -230,7 +241,7 @@ void Task_Lixo(void* Parameters) {
 
 	while (true) {
 
-		if (xSemaphoreTake(sem_Lixo, portMAX_DELAY) == true) {
+		if (xSemaphoreTake(sem_Lixo, portMAX_DELAY) == pdTRUE) {
 
 			vTaskDelay(5000);
 			ConveyorOff();
@@ -339,49 +350,67 @@ void switch1_rising_isr(ULONGLONG lastTime) {
 
 void vTaskList(void* pvParameters) {
 
-	int blocksRecDoc1 = 0;
-	int blocksRecDoc2 = 0;
-	int blocksRecDoc3 = 0;
-	int blocksRegect  = 0;
+	//int blocksRecDoc1 = 0;
+	//int blocksRecDoc2 = 0;
+	//int blocksRecDoc3 = 0;
+	//int blocksRegect  = 0;
+
+
+	//AQUI DECLARAS AS VARIAVEIS A RECEBER DA MAILBOX
+	stats BlockStat;
+
+	int	  inv_pos = 0;
 
 	//While operating, the system can provide information (e.g., number of bricks delivered at dock 1)
 	while (TRUE) {
 		
-		xSemaphoreTake(sem_list, portMAX_DELAY);
-		xQueueReceive(mbx_blocksRecDoc1, &blocksRecDoc1, portMAX_DELAY);
-		xQueueReceive(mbx_blocksRecDoc2, &blocksRecDoc2, portMAX_DELAY);
-		xQueueReceive(mbx_blocksRecDoc3, &blocksRecDoc3, portMAX_DELAY);
-		xQueueReceive(mbx_blocksRegect, &blocksRegect, portMAX_DELAY);
-		printf("Lista: \n");
-		printf("Blocos recebido dock 1: %d \n", blocksRecDoc1);
-		printf("Blocos recebido dock 2: %d \n", blocksRecDoc2);
-		printf("Blocos recebido dock 3: %d \n", blocksRecDoc3);
-		printf("Blocos rejeitados: %d \n", blocksRegect);
+		if (xSemaphoreTake(sem_list, portMAX_DELAY) == pdTRUE) {
+			//AQUI COLOCAS O ENDEREÇO DAS VARIAVEIS EQUIVALENTES
+			xQueueReceive(mbx_blockstat, &BlockStat, portMAX_DELAY);
 
+			printf("Lista: \n");
+			printf("Blocos aceites tipo 1: %d \n", BlockStat[Block1].accepted);
+			printf("Blocos aceites tipo 2: %d \n", BlockStat[Block2].accepted);
+			printf("Blocos aceites tipo 3: %d \n", BlockStat[Block3].accepted);
+			printf("Blocos rejeitados: %d \n",
+				BlockStat[Block1].rejected + BlockStat[Block2].rejected + BlockStat[Block3].rejected);
+		}
 		//xSemaphoreTake(sem_detailed_list, portMAX_DELAY);
 		//printf("Lista detalhada: \n");
 		//Show list of stored bricks (type, rejected, date when inserted).
 		//Given a brick type, shows the number of correctly delivered and rejected(bricks that are type X but the user said type Y).
 	}
 }
+
+void show_hist(strj inv[MAXBLOC], int inv_pos) {
+
+	for (int i = 0; i < inv_pos; ++i) {
+
+		std::string s = ctime( &(inv[i].date) ) + '\n';
+		std::cout << "Block n" + std::to_string(i) + '\n'
+			+ "	Type Block: " + std::to_string( inv[i].type) + '\n'
+			+ "	Date: " + s
+			+ "	Rejected: " + ( inv[i].rejected ? "Yes" : "No") + '\n';
+	}
+}
+
 void vTask_TurnRejectLedOn(void* pvParameters) {
 
 	while (true) {
 
-		if (xSemaphoreTake(sem_led_reject, portMAX_DELAY) != pdTRUE) {
-			continue;
+		if (xSemaphoreTake(sem_led_reject, portMAX_DELAY) == pdTRUE) {
 
-		}
-
-		for (int j = 0; j < 6; ++j) {
+		
+			for (int j = 0; j < 6; ++j) {
 
 
-			ledRejectOn();
-			//printf("led on");
-			vTaskDelay(250);//ms
-			ledRejectOff();
-			//printf("led off");
-			vTaskDelay(250);//ms
+				ledRejectOn();
+				//printf("led on");
+				vTaskDelay(250);//ms
+				ledRejectOff();
+				//printf("led off");
+				vTaskDelay(250);//ms
+			}
 		}
 	}
 }
@@ -426,16 +455,14 @@ void check_package_task(void* pvParameters) {
 
 	while (TRUE) {
 
-		if (xSemaphoreTake(sem_check_package_start,
-			portMAX_DELAY) != pdTRUE) {
-			continue;
+		if (xSemaphoreTake(sem_check_package_start, portMAX_DELAY) == pdTRUE) {
+
+			blockType = ReadTypeValue();
+			xSemaphoreGive(sem_cylinder_start_back);
+
+			xQueueSend(mbx_check_package, &blockType,
+				portMAX_DELAY);
 		}
-
-		blockType = ReadTypeValue();
-		xSemaphoreGive(sem_cylinder_start_back);
-
-		xQueueSend(mbx_check_package, &blockType,
-			portMAX_DELAY);
 	}						// task completion
 }
 
@@ -444,101 +471,109 @@ void enter_package_task(void* pvParameters) {
 	uInt8 blockType,
 		  blockInput;
 
-	int blocksRecDoc1 = 0;
-	int blocksRecDoc2 = 0;
-	int blocksRecDoc3 = 0;
-	int blocksRegect  = 0;
-
 	bool ignore;
 
 	stats BlockStat;
-	strj* inv   = (strj*)malloc( sizeof(strj) * MAXBLOC );
-	int inv_pos = 0;
+	strj  inv[MAXBLOC];
+
+	int	  inv_pos = 0;
 
 	while (TRUE) {
 		
+	loop:
+
 		blockType	= 0;
 		blockInput	= 0;
 		ignore		= false;
 
-		xQueueSend(mbx_blocksRecDoc1, &blocksRecDoc1, portMAX_DELAY);
-		xQueueSend(mbx_blocksRecDoc2, &blocksRecDoc2, portMAX_DELAY);
-		xQueueSend(mbx_blocksRecDoc3, &blocksRecDoc3, portMAX_DELAY);
-		xQueueSend(mbx_blocksRegect,  &blocksRegect, portMAX_DELAY);
+		//METES AQUI O ENDEREÇO DAS VARIAVEIS EQUIVALENTES 
+		xQueueSend(mbx_blockstat, &BlockStat, portMAX_DELAY);
+		//E MUDAS NOME DAS VARIVAIES MBX PARA FICAR COERENTE
 		xSemaphoreGive(sem_list);
 
 		vTaskDelay(50);//50ms
 
-		printf("\nInsert Block type (1, 2 or 3) or type (m) for manual control ");
+		printf("\nInsert Block type (1, 2 or 3)\nType (m) for manual control\nType(l) for block history\n");
 		
 		std::cin >> blockInput;
 
-		if (blockInput == 'm') {
-			cylinderTest();
+		switch (blockInput) {
+			case 'm':
+				cylinderTest();
+				goto loop;
+
+			case 'l':
+				show_hist(inv, inv_pos);
+				goto loop;
+			case '0':
+				ignore = true;
 		}
 
+
 		if ( blockInput < '0' || blockInput > '3') {//catch bad input
-			
-			if (blockInput + 1 == 'o')
-				ignore = true;
-			
-			else
-				break;
-		}
-		else {
-			blockInput -= ('0' + 1);//convert to same format 
+			continue;
 		}
 		
 		xSemaphoreGive(sem_conveyor);
 		xSemaphoreGive(sem_check_package_start);
 		//waits for task completion
-
+			
+		//vTaskDelay(10);
+		//xSemaphoreTake(sem_cylinder1_sen, portMAX_DELAY);
 		xQueueReceive(mbx_check_package, &blockType, portMAX_DELAY);
 
-		blockInput = ignore ? blockType : blockInput;
-
-		xSemaphoreTake(sem_cylinder1_sen, portMAX_DELAY);
-		xSemaphoreTake(sem_cylinder1_sen, portMAX_DELAY);
+		while (true) {
+			if (xSemaphoreTake(sem_cylinder1_sen, portMAX_DELAY) == pdTRUE)
+				std::cout << "break1\n";
+				break;
+		}
+		std::cout << "break2\n";
+		blockInput = ignore ? blockType : blockInput - ('0' + 1);
 
 		switch (blockType) {
 			case Block1: {printf("\nPackage received, Package Type : 1\n"); break; } //blockType é binario
 			case Block2: {printf("\nPackage received, Package Type : 2\n"); break; }
 			case Block3: {printf("\nPackage received, Package Type : 3\n"); break; }
 		}
-		//inv[inv_pos++].date;
-		inv[inv_pos++].type = blockType;
+		
+		inv[inv_pos++].date = time(nullptr);
+		inv[inv_pos].type	= blockInput; 
 
 		if (blockType != blockInput) {  
 			xSemaphoreGive(sem_led_reject); //aciona o led piscante se input != sensores
 			printf("BLOCO ERRADO\nInserido:%d \nRecebido%d\n", blockInput + 1, blockType + 1 );
 			
-			blocksRegect++;//TODO DELETE
-			inv[inv_pos++].rejected = true;
+			//blocksRegect++;//TODO DELETE
+
+			inv[inv_pos].rejected = true;
 			BlockStat[blockType].rejected++;
+
 			xSemaphoreGive(sem_Lixo);
 		}
 		else {
 
 			BlockStat[blockType].accepted++;
-			inv[inv_pos++].rejected = false;
+			inv[inv_pos].rejected = false;
 
 			switch (blockType) {
 
 				case Block1:
 
 					xSemaphoreGive(sem_Block1);
-					blocksRecDoc1++;
+				
+					//blocksRecDoc1++;
 					break;
 
 				case Block2:
 
 					xSemaphoreGive(sem_Block2);
-					blocksRecDoc2++;
+					//blocksRecDoc2++;
 					break;
 
 				default:
 
-					blocksRecDoc3++;				
+					//blocksRecDoc3++;			
+
 					xSemaphoreGive(sem_Lixo);
 					break;
 

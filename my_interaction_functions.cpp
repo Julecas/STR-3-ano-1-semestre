@@ -309,7 +309,7 @@ uInt8 ReadTypeValue() {
 
 
 	}
-	vTaskDelay(20);
+	vTaskDelay(25);
 
 	return
 		((c & 0b00100000) > 0) + (c >> 6);//counts how many bits == 1
@@ -323,19 +323,14 @@ void cylinderTest() {
 
 		tecla = _getch();
 		switch (tecla) {
-		case 'q': {moveCylinderStartFront();break;}
-		case 'a': {moveCylinderStartBack();	break;}
-		case 'z': {stopCylinderStart();		break;}
-		case 'e': {moveCylinder1Front();	break;}
-		case 'd': {moveCylinder1Back();		break;}
-		case 'c': {stopCylinder1();			break;}
-		case 'r': {moveCylinder2Front();	break;}
-		case 't': {moveCylinder2Back();		break;}
-		case 'f': {stopCylinder2();			break;}
-		case 'g': {gotoCylinder1(1); 		break;}
-		case 'v': {gotoCylinder2(0);		break;}
-		case 'b': {gotoCylinder2(1);		break;}
-		default: return;
+		case 'q': {gotoCylinderStart(1); 	break;}
+		case 'a': {gotoCylinderStart(0);	break;}
+		case 'w': {gotoCylinder1(1);		break;}
+		case 's': {gotoCylinder1(0); 		break;}
+		case 'e': {gotoCylinder2(1);		break;}
+		case 'd': {gotoCylinder2(0);		break;}
+		case 'p': return; 
+				//default: return;
 		}
 	}
 }
