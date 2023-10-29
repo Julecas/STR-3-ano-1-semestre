@@ -11,12 +11,12 @@
 
 
 extern "C" {
-	#include <FreeRTOS.h>
-	#include <task.h>
-	#include <timers.h>
-	#include <semphr.h>
-	#include <interface.h>	
-	#include <interrupts.h>
+#include <FreeRTOS.h>
+#include <task.h>
+#include <timers.h>
+#include <semphr.h>
+#include <interface.h>	
+#include <interrupts.h>
 }
 
 
@@ -32,7 +32,7 @@ void senseBlockCylinder2() {
 
 		p1 = readDigitalU8(1); // read port 1
 
-		if( getBitValue(p1, 7) ) {  //get bit 7 active high
+		if (getBitValue(p1, 7)) {  //get bit 7 active high
 			return;
 		}
 	}
@@ -287,7 +287,7 @@ void Conveyor(bool b) {
 	uInt8 p = readDigitalU8(2); // read port 2
 	setBitValue(&p, 2, b);
 	writeDigitalU8(2, p);
-	
+
 	taskEXIT_CRITICAL();
 
 }
@@ -309,7 +309,7 @@ uInt8 ReadTypeValue() {
 
 
 	}
-	vTaskDelay(20);
+	vTaskDelay(25);
 
 	return
 		((c & 0b00100000) > 0) + (c >> 6);//counts how many bits == 1
@@ -323,61 +323,14 @@ void cylinderTest() {
 
 		tecla = _getch();
 		switch (tecla) {
-		case 'q': {
-			moveCylinderStartFront(); 
-			while (tecla == 'q') {
-				tecla = _getch();
-			}
-			stopCylinderStart();
-			break;
-		}
-		case 'a': {
-			moveCylinderStartBack();
-			while (tecla == 'a') {
-				tecla = _getch();
-			}
-			stopCylinderStart();
-			break;
-		}
-		case 'w': {
-			moveCylinder1Front();
-			while (tecla == 'a') {
-				tecla = _getch();
-			}
-			stopCylinder1();
-			break;
-		}
-		case 's': {
-			moveCylinder1Back();
-			while (tecla == 'a') {
-				tecla = _getch();
-			}
-			stopCylinder1();
-			break;
-		}
-		case 'e': {
-			moveCylinder2Front();
-			while (tecla == 'a') {
-				tecla = _getch();
-			}
-			stopCylinder2();
-			break;
-		}
-		case 'd': {
-			moveCylinder2Back();
-			while (tecla == 'a') {
-				tecla = _getch();
-			}
-			stopCylinder2();
-			break;
-		}
-		case 'r': {gotoCylinderStart(0);	break;}
-		case 't': {gotoCylinderStart(1);	break;}
-		case 'f': {gotoCylinder1(0);		break;}
-		case 'g': {gotoCylinder1(1); 		break;}
-		case 'v': {gotoCylinder2(0);		break;}
-		case 'b': {gotoCylinder2(1);		break;}
-		default: return;
+		case 'q': {gotoCylinderStart(1); 	break; }
+		case 'a': {gotoCylinderStart(0);	break; }
+		case 'w': {gotoCylinder1(1);		break; }
+		case 's': {gotoCylinder1(0); 		break; }
+		case 'e': {gotoCylinder2(1);		break; }
+		case 'd': {gotoCylinder2(0);		break; }
+		case 'p': return;
+			//default: return;
 		}
 	}
 }
