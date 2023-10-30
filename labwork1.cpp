@@ -49,7 +49,6 @@ xQueueHandle mbx_p2;
 // tasks handler declaration
 xTaskHandle emergencyTask;
 xTaskHandle resumeTask;
-xTaskHandle taskSender;
 xTaskHandle taskEnterPack;
 xTaskHandle taskCheckPack;
 xTaskHandle taskLedInt;
@@ -58,8 +57,8 @@ xTaskHandle taskGoBack;
 xTaskHandle taskLixo;
 xTaskHandle taskBlock1;
 xTaskHandle taskBlock2;
-xTaskHandle task_Cylinder1_sen;
 xTaskHandle task_hist;
+xTaskHandle resetask;
 
 
 struct strj {
@@ -90,7 +89,6 @@ void check_package_task(void* pvParameters);
 void enter_package_task(void* pvParameters);
 void vTask_TurnRejectLedOn(void* pvParameters);
 void Task_Go_Back(void* Parameters);
-void Task_Cylinder1_sen(void* Parameters);
 void Task_Block1(void* Parameters);
 void Task_Block2(void* Parameters);
 void vTask_LedInt(void* pvParameters);
@@ -101,7 +99,6 @@ void vTaskResume(void* pvParameters);
 void show_hist(strj inv[MAXBLOC], int inv_pos);
 void showList(stats BlockStat[3]);
 void Task_Lixo(void* Parameters);
-
 
 int main(int argc, char** argv) {
 
@@ -121,8 +118,8 @@ int main(int argc, char** argv) {
 void myDaemonTaskStartupHook(void) {
 
 	sem_check_package_start = xSemaphoreCreateCounting(10, 0);
-	sem_led_reject			= xSemaphoreCreateBinary();
-	sem_cylinder_start_back = xSemaphoreCreateBinary();
+	sem_led_reject			= xSemaphoreCreateCounting(10, 0);
+	sem_cylinder_start_back = xSemaphoreCreateCounting(10, 0);
 	sem_cylinder1_sen		= xSemaphoreCreateBinary();
 	sem_Block1				= xSemaphoreCreateCounting(10, 0);
 	sem_Block2				= xSemaphoreCreateCounting(10, 0);
@@ -134,7 +131,6 @@ void myDaemonTaskStartupHook(void) {
 	mbx_p0				= xQueueCreate(1, sizeof(int));
 	mbx_p1				= xQueueCreate(1, sizeof(int));
 	mbx_p2				= xQueueCreate(1, sizeof(int));
-
 
 	inicializarPortos();
 
@@ -159,6 +155,7 @@ void myDaemonTaskStartupHook(void) {
 	//interrupt tasks
 	attachInterrupt(1, 4, switch1_rising_isr, RISING);
 	attachInterrupt(1, 3, switch2_rising_isr, RISING);
+
 	xTaskCreate(vTaskEmergency, "vTaskEmergency ", 100, NULL, 0, &emergencyTask);
 	xTaskCreate(vTaskResume, "vTaskResume ", 100, NULL, 0, &resumeTask);
 
@@ -169,9 +166,7 @@ void Task_Go_Back(void* Parameters) {
 	while (true) {
 
 		if (xSemaphoreTake(sem_cylinder_start_back, portMAX_DELAY) == pdTRUE) {
-			printf("antes goto\n");
 			gotoCylinderStart(0);
-			printf("depois goto\n");
 		}
 	}
 }
@@ -215,8 +210,8 @@ void Task_Block2(void* Parameters) {
 		if (xSemaphoreTake(sem_Block2, portMAX_DELAY) == pdTRUE) {
 			
 			senseBlockCylinder1();
-			vTaskDelay(100);
 			xSemaphoreGive(input);
+			vTaskDelay(200);
 			senseBlockCylinder2();
 			ConveyorOff();
 			cylinder2FrontBack();
@@ -227,10 +222,12 @@ void Task_Block2(void* Parameters) {
 
 void Task_Lixo(void* Parameters) {
 	
-	if (xSemaphoreTake(sem_Lixo, portMAX_DELAY) == pdTRUE) {
+	while (true) {
+		if (xSemaphoreTake(sem_Lixo, portMAX_DELAY) == pdTRUE) {
 
-		senseBlockCylinder1();
-		xSemaphoreGive(input);
+			senseBlockCylinder1();
+			xSemaphoreGive(input);
+		}
 	}
 }
 
@@ -258,13 +255,11 @@ void vTaskEmergency(void* pvParameters) {
 
 		vTaskSuspend(taskLedReject);
 		vTaskSuspend(taskCheckPack);
-		vTaskSuspend(taskEnterPack);
 		vTaskSuspend(taskLixo);
 		vTaskSuspend(taskBlock1);
 		vTaskSuspend(taskBlock2);
-		vTaskSuspend(task_Cylinder1_sen);
 		vTaskSuspend(taskGoBack);
-
+		vTaskSuspend(taskEnterPack);
 
 		// The task is now suspended, so will
 		//not reach here until the ISR resumes it.
@@ -292,20 +287,21 @@ void vTaskResume(void* pvParameters) {
 		writeDigitalU8(1, p1);
 		writeDigitalU8(2, p2);
 
+		printf("\n **** RESUME task\n");
+
 		vTaskSuspend(taskLedInt);
 
 		vTaskResume(taskLedReject);
 		vTaskResume(taskCheckPack);
-		vTaskResume(taskEnterPack);
 		vTaskResume(taskLixo);
 		vTaskResume(taskBlock1);
 		vTaskResume(taskBlock2);
-		vTaskResume(task_Cylinder1_sen);
 		vTaskResume(taskGoBack);
+		vTaskResume(taskEnterPack);
+		printf("\nInsert Block type (1, 2 or 3)\nType (m) for manual control\nType(l) for block history\n");
 
 		// The task is now suspended, so will
 		//not reach here until the ISR resumes it.
-		printf("\n **** RESUME task\n");
 
 	}
 }
@@ -331,10 +327,9 @@ void switch1_rising_isr(ULONGLONG lastTime) {
 
 void showList(stats BlockStat[3]) {
 
-	printf("Lista: \n");
-	printf("Blocos aceites tipo 1: %d \n", BlockStat[Block1].accepted);
-	printf("Blocos aceites tipo 2: %d \n", BlockStat[Block2].accepted);
-	printf("Blocos aceites tipo 3: %d \n", BlockStat[Block3].accepted);
+
+	printf("Blocos aceites: %d \n",
+		BlockStat[Block1].accepted + BlockStat[Block2].accepted + BlockStat[Block3].accepted);
 	printf("Blocos rejeitados: %d \n",
 		BlockStat[Block1].rejected + BlockStat[Block2].rejected + BlockStat[Block3].rejected);
 
@@ -358,18 +353,10 @@ void vTask_TurnRejectLedOn(void* pvParameters) {
 
 		if (xSemaphoreTake(sem_led_reject, portMAX_DELAY) == pdTRUE) {
 
-			printf("antes led\n");
+			ledRejectOn();
+			vTaskDelay(3000);//ms
+			ledRejectOff();
 
-			for (int j = 0; j < 6; ++j) {
-
-				ledRejectOn();
-				//printf("led on");
-				vTaskDelay(250);//ms
-				ledRejectOff();
-				//printf("led off");
-				vTaskDelay(250);//ms
-			}
-			printf("depois led\n");
 		}
 	}
 }
@@ -399,18 +386,26 @@ void check_package_task(void* pvParameters) {
 
 		if (xSemaphoreTake(sem_check_package_start, portMAX_DELAY) == pdTRUE) {
 
-			printf("antes blocktype\n");
 			blockType = ReadTypeValue();
-			printf("depois blocktype %d\n", blockType);
 			xSemaphoreGive(sem_cylinder_start_back);
-			printf("depois give start back\n");
 
 			xQueueSend(mbx_check_package, &blockType,
 				portMAX_DELAY);
-			printf("depois mailbox\n");
 
 		}
 	}						// task completion
+}
+
+void showlistfull(stats BlockStat[3]) {
+
+	printf("Blocos aceites: \n");
+	printf("	tipo 1: %d \n", BlockStat[Block1].accepted);
+	printf("	tipo 2: %d \n", BlockStat[Block2].accepted);
+	printf("	tipo 3: %d \n", BlockStat[Block3].accepted);
+	printf("Blocos rejeitados: \n");
+	printf("	tipo 1: %d \n", BlockStat[Block1].rejected);
+	printf("	tipo 2: %d \n", BlockStat[Block2].rejected);
+	printf("	tipo 3: %d \n", BlockStat[Block3].rejected);
 }
 
 void enter_package_task(void* pvParameters) {
@@ -425,45 +420,62 @@ void enter_package_task(void* pvParameters) {
 
 	int	  inv_pos = -1;
 	ConveyorOn();
+	cylinderTest();
 
 	while (TRUE) {
 
 	loop:
 
-		blockType = 0;
-		blockInput = 0;
-		ignore = false;
+		blockType	= 0;
+		blockInput	= 0;
+		ignore		= false;
 
 		showList(BlockStat);
 
-		printf("\nInsert Block type (1, 2 or 3)\nType (m) for manual control\nType(l) for block history\n");
+		std::cout << "\nInsert Block type (1, 2 or 3)\n";
+		std::cout << "Type (m) for manual calibration\n";
+		std::cout << "Type (l) for block history\n";
+		std::cout << "Type (s) for full block list\n";
+		std::cout << "Type (o) ignore block sensors\n";
 
 		std::cin >> blockInput;
-
 
 		switch (blockInput) {
 		case 'm':
 			cylinderTest();
+			system("cls");
 			goto loop;
 
 		case 'l':
+			system("cls");
 			show_hist(inv, inv_pos);
 			goto loop;
-		case '0':
+		case 'o':
+			std::cin >> blockInput;
 			ignore = true;
+			break;
+		case 's':
+			system("cls");
+			showlistfull(BlockStat);
+			goto loop;
 		}
-
 
 		if (blockInput < '0' || blockInput > '3') {//catch bad input
 			goto loop;
 		}
 
+
 		xSemaphoreGive(sem_check_package_start);
 		//waits for task completion
-
 		xQueueReceive(mbx_check_package, &blockType, portMAX_DELAY);
+		
+		blockInput -= '0' + 1;
 
-		blockInput = ignore ? blockType : blockInput - ('0' + 1);
+
+		if (ignore) {
+			blockType = blockInput;
+			ignore = false;
+		}
 
 		switch (blockType) {
 		case Block1: {printf("\nPackage received, Package Type : 1\n"); break; } //blockType � binario
@@ -475,16 +487,15 @@ void enter_package_task(void* pvParameters) {
 		inv[inv_pos].type = blockInput;
 
 		if (blockType != blockInput) {
+		
 			xSemaphoreGive(sem_led_reject); //aciona o led piscante se input != sensores
 			printf("BLOCO ERRADO\nInserido:%d \nRecebido%d\n", blockInput + 1, blockType + 1);
-
-			//blocksRegect++;//TODO DELETE
 
 			inv[inv_pos].rejected = true;
 			BlockStat[blockType].rejected += 1;
 
-			xSemaphoreGive(sem_Lixo);
-		
+			//xSemaphoreGive(sem_Lixo);
+			goto lixo;
 		}else {
 
 			BlockStat[blockType].accepted++;
@@ -502,17 +513,18 @@ void enter_package_task(void* pvParameters) {
 				break;
 
 			default:
+				lixo:
 				xSemaphoreGive(sem_Lixo);
 				break;
 
 			}
 		}
-
 		while (true) {
-			if (xSemaphoreTake(input, 10) == pdTRUE) {
+			if (xSemaphoreTake(input, portMAX_DELAY) == pdTRUE) {
 				break;
 			}
 		}
+		system("cls");
 	}
 }
 

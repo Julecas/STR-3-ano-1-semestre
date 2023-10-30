@@ -9,7 +9,6 @@
 
 //debug
 
-
 extern "C" {
 #include <FreeRTOS.h>
 #include <task.h>
@@ -22,6 +21,7 @@ extern "C" {
 
 void Conveyor(bool b);
 void moveCylinder(int port, int bitF, bool Fv, int bitB, bool Fb);
+
 
 
 void senseBlockCylinder2() {
@@ -57,18 +57,21 @@ bool senseBlockCylinder1value() {
 
 void ledRejectOn() {
 
-	taskENTER_CRITICAL();
 	uInt8 p = readDigitalU8(2); // read port 2
 	setBitValue(&p, 7, 1);
+
+	taskENTER_CRITICAL();
 	writeDigitalU8(2, p);
 	taskEXIT_CRITICAL();
 }
 
 void ledRejectOff() {
 
-	taskENTER_CRITICAL();
 	uInt8 p = readDigitalU8(2); // read port 2
+
 	setBitValue(&p, 7, 0);
+	taskENTER_CRITICAL();
+
 	writeDigitalU8(2, p);
 	taskEXIT_CRITICAL();
 }
@@ -143,11 +146,13 @@ void moveCylinder2Front() {
 //moveCylinder(2, 0, 0, 1, 0);
 void moveCylinder(int port, int bitF, bool Fv, int bitB, bool Fb) {
 
-	taskENTER_CRITICAL();
 	uInt8 p = readDigitalU8(port); // read port 
 	setBitValue(&p, bitF, Fv);	  // Move front 
 	setBitValue(&p, bitB, Fb);   // Move back
+	
+	taskENTER_CRITICAL();
 	writeDigitalU8(port, p);    // update port
+
 	taskEXIT_CRITICAL();
 }
 
@@ -282,18 +287,17 @@ void ConveyorOff() {
 void Conveyor(bool b) {
 
 	//task critic
-	taskENTER_CRITICAL();
-
 	uInt8 p = readDigitalU8(2); // read port 2
 	setBitValue(&p, 2, b);
-	writeDigitalU8(2, p);
 
+	taskENTER_CRITICAL();
+	writeDigitalU8(2, p);
 	taskEXIT_CRITICAL();
 
 }
 
 
-uInt8 ReadTypeValue() {
+uInt8 ReadTypeValue(){
 
 	uInt8 p1,
 		c = 0;
@@ -309,7 +313,7 @@ uInt8 ReadTypeValue() {
 
 
 	}
-	vTaskDelay(25);
+	vTaskDelay(50);
 
 	return
 		((c & 0b00100000) > 0) + (c >> 6);//counts how many bits == 1
@@ -319,6 +323,14 @@ uInt8 ReadTypeValue() {
 
 void cylinderTest() {
 	int tecla = 0;
+	std::cout << "\nComandos :\n";
+	std::cout << "cylinder Start frente q\n";
+	std::cout << "cylinder Start tras   a\n";
+	std::cout << "cylinder 1     frente w\n";
+	std::cout << "cylinder 1     tras   s\n";
+	std::cout << "cylinder 2     frente e\n";
+	std::cout << "cylinder 2     tras   d\n";
+	std::cout << "Sair p\n";
 	while (TRUE) {
 
 		tecla = _getch();
@@ -329,7 +341,9 @@ void cylinderTest() {
 		case 's': {gotoCylinder1(0); 		break; }
 		case 'e': {gotoCylinder2(1);		break; }
 		case 'd': {gotoCylinder2(0);		break; }
-		case 'p': return;
+		case 'p':
+			system("cls");
+			return;
 			//default: return;
 		}
 	}

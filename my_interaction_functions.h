@@ -1,19 +1,15 @@
 #pragma once
 
-extern "C" {
-#include <interface.h>
-}
 #define Block1  0
 #define Block2  1
 #define Block3  2
-
-
 //sensor functions
-
+extern "C" {
+#include <interface.h>
+}
 void senseBlockCylinder2();
 void senseBlockCylinder1();
 bool senseBlockCylinder1value();
-
 // given a byte value, returns the value of its bit n
 int getBitValue(uInt8 value, uInt8 bit_n);
 
