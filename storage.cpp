@@ -27,11 +27,11 @@ int main() {
 
 	int keyboard = 0;
 
-	showMenu();
+	//showMenu();
 	while (keyboard != 27) {
 		if (_kbhit()) {
 			keyboard = _getch();
-			executeControl(keyboard);
+			//executeControl(keyboard);
 		}
 		else {
 			keyboard = 0;
@@ -44,19 +44,19 @@ int main() {
 	closeChannels;
 	return 0;
 }
-
+/*
 void showMenu() {
-
+	//todo
 }
 
 void showStates() {
-
+	//todo
 }
 
 void executeControl(int keyboard) {
-
+	//todo
 }
-
+*/
 
 // Executar programa: Ctrl + F5 ou Menu Depurar > Iniciar Sem Depuração
 // Depurar programa: F5 ou menu Depurar > Iniciar Depuração
