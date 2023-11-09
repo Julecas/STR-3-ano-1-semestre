@@ -1,0 +1,31 @@
+public class Mechanism {
+    
+    public void ledOn(int ledNumber){
+        Storage.ledOn(ledNumber);
+    }
+
+    public void ledsOff(){
+        Storage.ledsOff();
+    }
+
+    public boolean switch1Pressed(){
+        //todo for now returns false
+        if(Storage.getSwitch1() == 1){
+            return true;
+        }
+        return false;
+    }
+
+    public boolean switch2Pressed(){
+        //todo for now returns false
+        return false;
+    }
+
+    public void putPartInCell(){
+        //todo
+    }
+
+    public void takePartFromCell(){
+        //todo
+    }
+}
