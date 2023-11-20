@@ -27,7 +27,7 @@ public class AxisZ implements Axis{
         }
         
         if(Storage.getZPos() > pos){
-            System.out.println("DEBUGG");
+            //System.out.println("DEBUGG");
             Storage.moveZDown();
             while(Storage.getZPos() != pos){ };
             Storage.stopZ();

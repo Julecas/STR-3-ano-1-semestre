@@ -85,13 +85,13 @@ void stopZ() {
 int getZPos() {
     uInt8 p0 = readDigitalU8(0);
     uInt8 p1 = readDigitalU8(1);
-    if (!getBitValue(p1, 3)) return 1; // position z = 1 down
-    if (!getBitValue(p1, 2)) return 2; // position z = 2 down
-    if (!getBitValue(p1, 1)) return 3; // position z = 3 down
+    if (!getBitValue(p1, 3)) return 1; // position z = 1 bottom position 
+    if (!getBitValue(p1, 2)) return 2; // position z = 2 
+    if (!getBitValue(p1, 1)) return 3; // position z = 3 
 
-    if (!getBitValue(p1, 0)) return 10; // position z = 1 up
-    if (!getBitValue(p0, 7)) return 20; // position z = 2 up
-    if (!getBitValue(p0, 6)) return 30; // position z = 3 up
+    if (!getBitValue(p1, 0)) return 4; // position z = 4 
+    if (!getBitValue(p0, 7)) return 5; // position z = 5 
+    if (!getBitValue(p0, 6)) return 6; // position z = 6 top position
     return(-1);
 }
 
