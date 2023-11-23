@@ -1,9 +1,9 @@
-
 public class threadGoto extends Thread{
+
     private final Axis axis;
     private final int pos;
 
-    public threadGoto(Axis axis,int pos){
+    public threadGoto(Axis axis,int pos){ //constructor
         this.axis = axis;
         this.pos = pos;
     }

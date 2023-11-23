@@ -1,3 +1,5 @@
+import LowLevel.Storage;
+
 public class Mechanism {
     
     public void ledOn(int ledNumber){
