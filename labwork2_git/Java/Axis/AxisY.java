@@ -1,3 +1,6 @@
+
+
+
 public class AxisY implements Axis{
    
     @Override
@@ -19,8 +22,21 @@ public class AxisY implements Axis{
      @Override
      public void gotoPos(int pos){
         //TODO auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method");
 
-        //to be developed inJAVA
+        int currentPos = this.getPos();
+
+        if( currentPos == pos )
+            return;
+        
+        else if( currentPos > pos )
+            //Means im on left of the goal
+            this.moveBackward();
+        else
+            this.moveForward();
+        
+        
+        while( this.getPos() != pos ){continue;}//prende
+
+        this.stop();
      }
 }

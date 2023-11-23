@@ -1,6 +1,4 @@
-import com.LowLevel.Storage;
 
-package Axis;
 public class AxisX implements Axis{
    
     @Override
