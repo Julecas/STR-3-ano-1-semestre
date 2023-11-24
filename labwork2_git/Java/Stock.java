@@ -28,13 +28,13 @@ public class Stock {
 
     }
 
-    private boolean IsPosValid(int z, int x){
+    public boolean IsPosValid(int z, int x){
         return
                z < 0 || z > Dimz
             || x < 0 || x > Dimx;
     }
 
-    private boolean IsPosOccupied( int z, int x){
+    public boolean IsPosOccupied( int z, int x){
         
         return 
             StockMatrix[ z ][ x ] == null || StockMatrix[ z ][ x ].empty ?
