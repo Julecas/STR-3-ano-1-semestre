@@ -1,4 +1,7 @@
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Scanner;
+import java.lang.Math;
 //import java.util.concurrent.ArrayBlockingQueue;
 //import java.util.concurrent.Semaphore;
 
@@ -15,7 +18,10 @@ public class App {
     private static int posX = 0;
     private static int posZ = 0;
     private static int op = -1;
-
+    private static Stock stk;
+    private static DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yy HH:mm:ss");
+    
+    
     public static void main(String[] args) throws Exception {
 
         posX = 0;
@@ -28,6 +34,7 @@ public class App {
         thread_gotoZ = new ThreadGoto(axisZ);
         thread_calibrateZ = new ThreadCalibration(axisZ);
         thread_calibrateX = new ThreadCalibration(axisX);
+        stk = new Stock();
         //thread_gotoY = new ThreadPallete(axisZ, axisY);
 
         System.out.println("Labwork2 from Java");
@@ -86,4 +93,90 @@ public class App {
         thread_calibrateZ.start();
         return;
     }
+    
+    private void AddItem(Scanner scanner){
+
+        int z,x,ref;
+        String LoadName,aux,input;
+        LocalDateTime ShipDate;
+ 
+        //Perguntar coordenadas
+        while(true){
+
+            System.out.println("Insert the coordinates(x,z) or \'q\' to quit: ");
+            
+            input = scanner.nextLine();
+
+            if( input.charAt(0) == 'q' ){
+                return;
+            }
+
+            aux = input.substring(0, input.indexOf(','));
+
+            try{
+                x = Integer.parseInt(aux);
+            }catch(Exception e){
+                System.out.println("Invalid input(x)!\n"+ e);
+                continue;
+            }
+ 
+            aux = input.substring(input.indexOf(','));
+
+            try{
+                z = Integer.parseInt(aux);
+            }catch(Exception e){
+                System.out.println("Invalid input(z)!\n"+ e);
+                continue;
+            }
+            break;
+        }
+        //Perguntar data
+        while(true){
+            
+            System.out.println("Insert Shipment date(DD/MM/YY hh:mm:ss) or \'q\' to quit:");
+            input = scanner.nextLine();
+
+            try {
+                ShipDate = LocalDateTime.parse(input,formatter);
+            } catch (Exception e) {
+                System.out.println("Invalid input(z)!\n"+ e);
+                continue;
+            }
+            break;
+        }
+        
+        //load name
+        System.out.println("Insert Load Name or \'q\' to quit: ");
+        LoadName = scanner.nextLine();
+        
+        //reference code
+        while(true){
+            System.out.println("Insert reference code or \'q\' to quit: ");
+            input = scanner.nextLine();
+
+            try{
+                ref = Integer.parseInt(input);
+            }catch(Exception e){
+                System.out.println("Invalid input(reference)!\n"+ e);
+                continue;
+            }
+            break;
+        }
+ 
+        int res = stk.Add_item(LoadName, ref, ShipDate, z, x);
+
+        switch (res) {
+            case -2:
+                //Pos errada
+                break;
+        
+            case -1:
+                //Pos Ocupada
+                break;
+            default:
+                //Iniciar operation
+                break;
+        }
+    }
+
 }

@@ -1,4 +1,4 @@
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 public class Stock {
     
@@ -13,13 +13,13 @@ public class Stock {
     //-2 pos errada
     //-1 pos ocupada
     // 0 succefull 
-    public int Add_item(String Name, int ref, LocalDate date,int z,int x){
+    public int Add_item(String Name, int ref, LocalDateTime date,int z,int x){
 
         if( IsPosValid(z,x) ){
             return -2;
         }
         
-        if( IsPosOccupied(z, x) ){
+        if( IsPosOccupied(z,x) ){
             return -1;
         }
 
@@ -29,27 +29,40 @@ public class Stock {
     }
 
     private boolean IsPosValid(int z, int x){
-        return z < 0 || z > Dimz ||
-            x < 0 || x > Dimx;
+        return
+               z < 0 || z > Dimz
+            || x < 0 || x > Dimx;
     }
 
     private boolean IsPosOccupied( int z, int x){
-        return StockMatrix[ z ][ x ] != null;
+        
+        return 
+            StockMatrix[ z ][ x ] == null || StockMatrix[ z ][ x ].empty ?
+                false : true;    
     }
 
     private class Cell{
     
-        String    Name;
-        int       ref;
-        LocalDate date;
+        String        Name;
+        int           ref;
+        LocalDateTime date;
+        boolean       empty;//true if empty
 
-        public Cell(String Name, int ref, LocalDate date){
+        public Cell(String Name, int ref, LocalDateTime date){
 
-            this.Name = new String(Name);
-            this.ref  = ref;
-            this.date = date;
+            this.Name  = new String(Name);
+            this.ref   = ref;
+            this.date  = date;
+            this.empty = false;
+        }
+
+        public Cell(){
+            
+            this.Name  = new String();
+            this.ref   = 0;
+            this.date  = null;
+            this.empty = true;
         }
     }
-
 }
 
