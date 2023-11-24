@@ -11,11 +11,14 @@ public class ThreadGoto extends Thread{
         this.mbx_pos = new ArrayBlockingQueue<Integer>(MCap);
     }
 
+    public int axisCurrentPos(){ 
+        return axis.getPos();
+    }
+
     public void initializeGoto(){
 
         int pos;
 
-        
         try {
             pos = mbx_pos.take();
         } catch (InterruptedException e) {
@@ -33,7 +36,10 @@ public class ThreadGoto extends Thread{
     
     @Override
     public void run(){
-        this.initializeGoto();
+
+        while(true){//to keep running
+            this.initializeGoto();
+        }
     }
 
     public void AddQueue(int pos){

@@ -9,19 +9,19 @@ public class App {
 
     private static AxisZ axisZ;
     private static AxisX axisX;
-    //private static AxisY axisY;
+    private static AxisY axisY;
     private static ThreadCalibration thread_calibrateZ;
     private static ThreadCalibration thread_calibrateX;
-    private static ThreadGoto thread_gotoX;
-    private static ThreadGoto thread_gotoZ;
-    //private static ThreadPallete thread_gotoY; 
+    public static ThreadGoto thread_gotoX;
+    public static ThreadGoto thread_gotoZ;
+    public static ThreadPallete thread_gotoY; 
     private static int posX = 0;
     private static int posZ = 0;
     private static int op = -1;
     private static Stock stock;
     private static DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yy HH:mm:ss");
     
-    
+    //MAIN****************************************************************************************************************************
     public static void main(String[] args) throws Exception {
 
         posX = 0;
@@ -29,26 +29,28 @@ public class App {
         op = -1;
         axisZ = new AxisZ();
         axisX = new AxisX();
-        //axisY = new AxisY();
+        axisY = new AxisY();
         thread_gotoX = new ThreadGoto(axisX);
         thread_gotoZ = new ThreadGoto(axisZ);
         thread_calibrateZ = new ThreadCalibration(axisZ);
         thread_calibrateX = new ThreadCalibration(axisX);
         stock = new Stock();
-        //thread_gotoY = new ThreadPallete(axisZ, axisY);
+        thread_gotoY = new ThreadPallete(axisX, axisZ, axisY);
 
         System.out.println("Labwork2 from Java");
         Storage.initializeHardwarePorts();
   
         menu();
     }
+     //***********************************************************************************************************************************
 
-    public static void menu(){
+    public static void menu() {
        
         Scanner scan = new Scanner(System.in);
 
-        thread_gotoX.start();
-        thread_gotoZ.start();
+        //start threads
+        Goto(thread_gotoX,thread_gotoY,thread_gotoZ);
+        calibrate(thread_calibrateX, thread_calibrateZ); 
         
         while(true){
 
@@ -66,9 +68,14 @@ public class App {
 
                 thread_gotoZ.AddQueue(posZ);
                 thread_gotoX.AddQueue(posX);
+                
+                thread_gotoY.SemaphoreYRelease();
                 continue;
             }
-            calibrate( thread_calibrateX, thread_calibrateZ); 
+            thread_calibrateX.SemaphoreCalibrateRelease();
+            thread_calibrateZ.SemaphoreCalibrateRelease();
+
+            thread_gotoY.SemaphoreYRelease();
             
         }
         scan.close();
@@ -91,6 +98,13 @@ public class App {
     public static void calibrate(Thread thread_calibrateX,Thread thread_calibrateZ){
         thread_calibrateX.start();
         thread_calibrateZ.start();
+        return;
+    }
+
+    public static void Goto(Thread thread_gotoX,Thread thread_gotoY,Thread thread_gotoZ){
+        thread_gotoX.start();
+        thread_gotoY.start();
+        thread_gotoZ.start();
         return;
     }
 
