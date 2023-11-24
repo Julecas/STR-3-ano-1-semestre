@@ -94,10 +94,57 @@ public class App {
         return;
     }
 
-    private static void GetItemByReference(Scanner scanner){
-        //TODO: all
+    private static void SearchItems(Scanner scanner){
+        
+        String input;
+        char caux;
+        int[] pos = new int[2];
+        //Perguntar Se ]e ref ou pos
+        while(true){
+   
+            System.out.print("\033[H\033[2J");  
+            
+            System.out.println(
+                "   _____                           __       __  ___                            \n" +
+                "  / ___/ ___   ____ _ _____ _____ / /_     /  |/  /___   ____   __  __         \n" +
+                "  \\__ \\ / _ \\ / __ `// ___// ___// __ \\   / /|_/ // _ \\ / __ \\ / / / /   \n" +
+                " ___/ //  __// /_/ // /   / /__ / / / /  / /  / //  __// / / // /_/ /          \n" +
+                "/____/ \\___/ \\__,_//_/    \\___//_/ /_/  /_/  /_/ \\___//_/ /_/ \\__,_/      \n");                                                                              
 
-    }
+            System.out.println("Search by reference, position or quit(R/p/q)?");
+            
+            input = scanner.nextLine();
+            caux  = input.charAt(0);
+            
+            if(  caux == 'q' ||  caux == 'Q'){
+                return;
+
+            }else if(  caux == 'p' ||  caux == 'P'){
+                
+                System.out.println("Insert the position(x,z) or \'q\' to quit: ");
+
+                 input = scanner.nextLine();
+
+                 try {
+                     pos = ReadPos(input);
+                 } catch (Exception e) {
+                     System.out.println("Invalid input!\n"+ e);
+                     continue;
+                 }
+
+                 if(pos[0] == -1){
+                     return;
+                 }
+
+            }else{
+            //TODO: 
+                //Ref
+            //Print pos com essa ref
+
+            }
+        }
+
+           }
 
     private static void ListItemsInStock(Scanner scanner){
         //TODO: all
@@ -119,7 +166,7 @@ public class App {
         //Perguntar coordenadas
         while(true){
 
-            System.out.println("Insert the coordinates(x,z) or \'q\' to quit: ");
+            System.out.println("Insert the position(x,z) or \'q\' to quit: ");
 
             input = scanner.nextLine();
 
@@ -148,7 +195,7 @@ public class App {
         }
         while(true){
 
-            System.out.println("Insert the new position coordinates(x,z) or \'q\' to quit: ");
+            System.out.println("Insert the new position position(x,z) or \'q\' to quit: ");
 
             input = scanner.nextLine();
 
@@ -192,7 +239,7 @@ public class App {
         
             //Perguntar coordenadas
             while(true){
-                System.out.println("Insert the coordinates(x,z) or \'q\' to quit: ");
+                System.out.println("Insert the position(x,z) or \'q\' to quit: ");
 
                 input = scanner.nextLine();
 
@@ -245,9 +292,9 @@ public class App {
                 break;
             }
             System.out.println("Is this correct(Y,n)?\n"+
-                               "    Coordinates: ("+x+","+z+")\n"+
-                               "    Reference: "+ref+"\n"+
-                               "    LoadName: "+LoadName+"\n"+
+                               "    Position:      ("+x+","+z+")\n"+
+                               "    Reference:     "+ref+"\n"+
+                               "    LoadName:      "+LoadName+"\n"+
                                "    Shipment Date: "+ShipDate); 
         
             input = scanner.nextLine();
