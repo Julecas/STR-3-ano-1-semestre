@@ -15,8 +15,6 @@ public class ThreadCalibration extends Thread{
         semCalibrate.release();    
     }
 
-
-
     public void initializeCalibration(){
 
         try {

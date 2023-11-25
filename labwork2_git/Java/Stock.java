@@ -34,6 +34,27 @@ public class Stock {
 
     }
 
+    public int RemoveItem(int z,int x){
+        
+        if( !IsPosOccupied(z,x) ){
+            return -1;
+        }
+        if( !IsPosValid(z, x) ){
+            return -2;
+        }
+
+        StockMatrix[z][x] = null;
+        --CapUtilized;
+        return 0;
+    }
+
+    //Item at z2,x2 must be empty
+    public void ChangeItems(int z1,int x1,int z2,int x2){
+
+        StockMatrix[z2][x2] = StockMatrix[z1][x1];
+        StockMatrix[z1][x1] = null;
+    }
+
     public boolean IsPosValid(int z, int x){
         return
                z < 0 || z > Dimz

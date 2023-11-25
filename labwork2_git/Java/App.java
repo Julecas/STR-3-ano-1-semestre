@@ -201,13 +201,21 @@ public class App {
             System.out.println(
                 "Item LoadName:      "+c.Name+
                 "Item reference:     "+c.ref+
-                "Item Shipment Date: "+c.date+
+                "Item Shipment Date: "+c.date.format(formatter)+
                 "----------------------------");
         }
     }
 
     private static void SystemInfo(Scanner scanner){
-        
+        System.out.println(
+                "\033[H\033[2J"+
+                "System Info:\n"+
+                "   Total Capacity:"+ stock.GetTotalCap()+"\n"+
+                "   Capacity used: "+ stock.GetCapUsed()+ "\n"+
+                "   Current Date:  "+LocalDateTime.now().format(formatter)+
+                "Press any key to exit" 
+            );
+        scanner.nextLine();
     }
 
 
@@ -217,9 +225,6 @@ public class App {
         int[] pos = new int[2];
         int x1,z1,x2,z2;
 
-        //GetInput:
-        
-        //Perguntar coordenadas
         while(true){
 
             System.out.println("Insert the position(x,z) or \'q\' to quit: ");
@@ -237,7 +242,6 @@ public class App {
                 return;
             }
             
-            //Verificar validade
             if( !stock.IsPosOccupied(pos[1], pos[0]) ){
                 System.out.println("Position is NOT ocuppied!");
                 continue;
@@ -266,7 +270,6 @@ public class App {
                 return;
             }
             
-            //Verificar validade
             if( stock.IsPosOccupied(pos[1], pos[0]) ){
                 System.out.println("Position IS ocuppied!");
                 continue;
@@ -280,6 +283,8 @@ public class App {
         }
          
         //TODO: trocar 
+
+        stock.ChangeItems(z1,x1,z2,x2);
 
     }
 

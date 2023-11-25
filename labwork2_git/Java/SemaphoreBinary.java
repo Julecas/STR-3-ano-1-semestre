@@ -22,7 +22,7 @@ public class SemaphoreBinary {
             try {
                 sem.acquire();
             } catch (Exception e) {
-                System.out.println("Erro SemaphoreBinary");
+                System.out.println("Erro SemaphoreBinary"+e);
             }
         }
     }
@@ -31,7 +31,7 @@ public class SemaphoreBinary {
         try {
             sem.acquire();
         } catch (InterruptedException e) {
-            System.out.println("Erro SemaphoreBinary");
+            System.out.println("Erro SemaphoreBinary"+e);
         }
     }
 
