@@ -9,6 +9,13 @@ extern "C" {
 #endif
 /*
  * Class:     Storage
+ * Method:    getPalleteSen
+ * Signature: ()V
+ */
+JNIEXPORT int JNICALL Java_Storage_getPalleteSen
+  (JNIEnv *, jclass);
+/*
+ * Class:     Storage
  * Method:    initializeHardwarePorts
  * Signature: ()V
  */

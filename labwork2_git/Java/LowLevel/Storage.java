@@ -1,3 +1,4 @@
+
 public class Storage {
 
     static{     //c:\STR\Labwork2\storage\x64\Debug\storage.dll
@@ -33,4 +34,8 @@ public class Storage {
     /* Leds */
     static synchronized native void ledOn(int led);
     static synchronized native void ledsOff();
+
+    /* sensors */
+    static synchronized native int getPalleteSen();
+
 }

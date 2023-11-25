@@ -1,6 +1,4 @@
-import com.LowLevel.Storage;
 
-package Axis;
 public class AxisX implements Axis{
    
     @Override
@@ -19,8 +17,8 @@ public class AxisX implements Axis{
     public int getPos(){
         return Storage.getXPos();
     }
-     @Override
-     public void gotoPos(int pos){
+    @Override
+    public void gotoPos(int pos){
         //TODO auto-generated method stub
 
         int currentPos = this.getPos();
