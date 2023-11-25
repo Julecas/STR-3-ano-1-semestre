@@ -26,12 +26,23 @@ public class ThreadGoto extends Thread{
             return;
         }
 
-        System.out.println("Af,mbx Pos =" + pos);
-
+        //System.out.println("Af,mbx Pos =" + pos);
 
         axis.gotoPos(pos);
         while(axis.getPos() != pos){}
         axis.stop();
+
+        //release semaphores
+        if(this.axis == Mechanism.axisX){
+            Mechanism.releaseSemX();
+        }
+        if(this.axis == Mechanism.axisZ){
+            Mechanism.releaseSemZ();
+        }
+        if(this.axis == Mechanism.axisY){
+            Mechanism.releaseSemY();
+        }
+
     }
     
     @Override

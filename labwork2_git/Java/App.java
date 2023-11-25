@@ -6,15 +6,7 @@ import java.lang.Math;
 //import java.util.concurrent.Semaphore;
 
 public class App {
-
-    private static AxisZ axisZ;
-    private static AxisX axisX;
-    private static AxisY axisY;
-    private static ThreadCalibration thread_calibrateZ;
-    private static ThreadCalibration thread_calibrateX;
-    public static ThreadGoto thread_gotoX;
-    public static ThreadGoto thread_gotoZ;
-    public static ThreadPallete thread_gotoY; 
+    private static Mechanism Mec;
     private static int posX = 0;
     private static int posZ = 0;
     private static int op = -1;
@@ -27,59 +19,47 @@ public class App {
         posX = 0;
         posZ = 0;
         op = -1;
-        axisZ = new AxisZ();
-        axisX = new AxisX();
-        axisY = new AxisY();
-        thread_gotoX = new ThreadGoto(axisX);
-        thread_gotoZ = new ThreadGoto(axisZ);
-        thread_calibrateZ = new ThreadCalibration(axisZ);
-        thread_calibrateX = new ThreadCalibration(axisX);
         stock = new Stock();
-        thread_gotoY = new ThreadPallete(axisX, axisZ, axisY);
 
         System.out.println("Labwork2 from Java");
         Storage.initializeHardwarePorts();
-  
+        Mec = new Mechanism();
+
+
         menu();
     }
      //***********************************************************************************************************************************
 
-    public static void menu() {
+    public static void menu() throws InterruptedException {
        
         Scanner scan = new Scanner(System.in);
-
-        //start threads
-        Goto(thread_gotoX,thread_gotoY,thread_gotoZ);
-        calibrate(thread_calibrateX, thread_calibrateZ); 
         
         while(true){
 
             System.out.println("Enter an option");
             op = scan.nextInt();
-            if( op == 1000){break;}
-            if(op != 1){
-                
-                posZ = firstDigit(op);
-                posX = lastDigit(op);
-
-                System.out.println("Bf,mbx PosZ =" + posZ);
-                System.out.println("Bf,mbx PosX =" + posX);
-
-
-                thread_gotoZ.AddQueue(posZ);
-                thread_gotoX.AddQueue(posX);
-                
-                thread_gotoY.SemaphoreYRelease();
-                continue;
+            if(op == 100){
+                break;
             }
-            thread_calibrateX.SemaphoreCalibrateRelease();
-            thread_calibrateZ.SemaphoreCalibrateRelease();
-
-            thread_gotoY.SemaphoreYRelease();
             
+            switch (op) {
+                case 1: {Mec.autoCalibrate(); break;}
+                case 2:   {//put part in cell
+                    op = scan.nextInt();
+                    posZ = firstDigit(op);
+                    posX = lastDigit(op);
+                    Mec.putPartInCell(posZ,posX);
+                    break;}
+                case 3:{
+                    op = scan.nextInt();
+                    posZ = firstDigit(op);
+                    posX = lastDigit(op);
+                    Mec.takePartFromCell(posZ,posX);
+                    break;}
+                default:{break;}    
+            }
         }
         scan.close();
-
     }
 
     public static int firstDigit(int op){
@@ -95,19 +75,7 @@ public class App {
         }
         return tm;
     }
-    public static void calibrate(Thread thread_calibrateX,Thread thread_calibrateZ){
-        thread_calibrateX.start();
-        thread_calibrateZ.start();
-        return;
-    }
-
-    public static void Goto(Thread thread_gotoX,Thread thread_gotoY,Thread thread_gotoZ){
-        thread_gotoX.start();
-        thread_gotoY.start();
-        thread_gotoZ.start();
-        return;
-    }
-
+   
     private static void SearchItems(Scanner scanner){
         
         String input;

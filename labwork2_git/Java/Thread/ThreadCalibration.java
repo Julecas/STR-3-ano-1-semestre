@@ -3,7 +3,7 @@ import java.util.concurrent.Semaphore;
 public class ThreadCalibration extends Thread{
     private final Axis axis;
     private boolean runOnce;
-    private Semaphore semCalibrate = null;
+    private Semaphore semCalibrate;
 
     public ThreadCalibration(Axis axis){//constructor
         this.axis = axis;
@@ -14,8 +14,6 @@ public class ThreadCalibration extends Thread{
     public void SemaphoreCalibrateRelease(){
         semCalibrate.release();    
     }
-
-
 
     public void initializeCalibration(){
 
