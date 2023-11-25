@@ -31,3 +31,5 @@ int getSwitch1_2();
 /* Leds */
 void ledOn(int led);
 void ledsOff();
+
+int getPalleteSen();
