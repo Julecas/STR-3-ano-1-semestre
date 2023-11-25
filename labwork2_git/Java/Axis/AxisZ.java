@@ -1,3 +1,4 @@
+
 public class AxisZ implements Axis{
    
     @Override
@@ -19,26 +20,21 @@ public class AxisZ implements Axis{
      @Override
      public void gotoPos(int pos){
         //TODO auto-generated method stub
-        //throw new UnsupportedOperationException("Unimplemented method");
 
-        //ASSUMING ITS NOT ALREADY MOVING
-        if(Storage.getZPos() == pos){//if in right position
+        int currentPos = this.getPos();
+
+        if( currentPos == pos )
             return;
-        }
         
-        if(Storage.getZPos() > pos){
-            //System.out.println("DEBUGG");
-            Storage.moveZDown();
-            while(Storage.getZPos() != pos){ };
-            Storage.stopZ();
-        }
+        else if( currentPos > pos )
+            //Means im on left of the goal
+            this.moveBackward();
+        else
+            this.moveForward();
+        
+        
+        while( this.getPos() != pos ){continue;}
 
-        if(Storage.getZPos() < pos){
-            Storage.moveZUp();
-            while(Storage.getZPos() != pos){ };
-            Storage.stopZ();
-        }
-
-        //to be developed inJAVA
+        this.stop();
      }
 }

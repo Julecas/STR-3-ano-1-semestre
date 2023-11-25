@@ -1,3 +1,4 @@
+
 public class Storage {
 
     static{     //c:\STR\Labwork2\storage\x64\Debug\storage.dll

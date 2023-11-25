@@ -1,8 +1,13 @@
-import com.LowLevel.Storage;
+import java.util.concurrent.Semaphore;
 
-package Axis;
 public class AxisX implements Axis{
-   
+    
+    private Semaphore  sem;
+
+    public AxisX(){
+        sem = new Semaphore(1);
+    }
+
     @Override
     public void moveForward(){
         Storage.moveXRight();
@@ -23,6 +28,12 @@ public class AxisX implements Axis{
      public void gotoPos(int pos){
         //TODO auto-generated method stub
 
+        try {
+            sem.acquire();
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
         int currentPos = this.getPos();
 
         if( currentPos == pos )
@@ -38,6 +49,7 @@ public class AxisX implements Axis{
         while( this.getPos() != pos ){continue;}
 
         this.stop();
+        sem.release();
     }
 }       
         //to be developed inJAVA
