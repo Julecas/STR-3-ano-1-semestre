@@ -165,8 +165,7 @@ void ledOn(int led) {
 /* Sensors */
 
 int getPalleteSen() {
-    uInt8 p1 = readDigitalU8(1);
-    return (p1 & 0b10000) >> 4;
+    return (readDigitalU8(1) & 0b10000) >> 4;
 }
 
 void ledsOff() {
