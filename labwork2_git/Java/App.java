@@ -356,7 +356,7 @@ public class App {
                                "    Position:      ("+x+","+z+")\n"+
                                "    Reference:     "+ref+"\n"+
                                "    LoadName:      "+LoadName+"\n"+
-                               "    Shipment Date: "+ShipDate); 
+                               "    Shipment Date: "+ShipDate.format(formatter)); 
         
             input = scanner.nextLine();
             if( input.indexOf(0) == 'n' || input.indexOf(0) == 'N' ){
