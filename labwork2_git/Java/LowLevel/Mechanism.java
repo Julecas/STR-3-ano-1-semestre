@@ -10,7 +10,8 @@ public class Mechanism {
     private ThreadGoto thread_gotoX;
     private ThreadGoto thread_gotoZ;
     private ThreadGoto thread_gotoY; 
-    private ThreadLed1 thread_led1;
+    public  static ThreadManager thread_manager;
+    public  static ThreadLed1 thread_led1;
     private static Semaphore semX; 
     private static Semaphore semY; 
     private static Semaphore semZ;
@@ -35,6 +36,10 @@ public class Mechanism {
         Goto(thread_gotoX,thread_gotoY,thread_gotoZ);
         calibrate(thread_calibrateX, thread_calibrateZ); 
         thread_led1.start();
+
+        //DEBUG:
+        thread_led1.add();
+
     }
 
     public void calibrate(Thread thread_calibrateX,Thread thread_calibrateZ){
@@ -56,39 +61,36 @@ public class Mechanism {
     }
     
     
-    public void ledOn(int ledNumber){
+    public static void ledOn(int ledNumber){
         Storage.ledOn(ledNumber);
     }
 
-    public void ledsOff(){
+    public static void ledsOff(){
         Storage.ledsOff();
     }
 
-    public boolean switch1Pressed(){
-        //todo for now returns false
-        if(Storage.getSwitch1() == 1){
-            return true;
-        }
-        return false;
+    public static boolean switch1Pressed(){
+
+        return Storage.getSwitch1() == 1;
+
     }
 
-    public boolean switch2Pressed(){
+    public static boolean switch2Pressed(){
         //todo for now returns false
         return false;
     }
 
-    public boolean bothSwithcesPressed(){
+    public static boolean bothSwithcesPressed(){
         //todo for now returns false
         return false;
     }
 
-    public int getPalleteSen(){
+    public static int getPalleteSen(){
         
         return Storage.getPalleteSen();
     }
 
     public boolean putPartInCell(int posZ, int posX) throws InterruptedException{
-        
         
         posZ *= 2;
         //goto X,Z
@@ -143,6 +145,38 @@ public class Mechanism {
         semY.acquire();
 
         return true;
+    }
+
+    public void linguarudo() throws InterruptedException{
+        thread_gotoY.AddQueue(2);//go front Y
+        semY.acquire();
+    }
+
+    public void GotoReference() throws InterruptedException{
+       
+        //goto X,Z
+        thread_gotoZ.AddQueue(1);
+        thread_gotoX.AddQueue(1);
+        
+        //ESPERAR por X,Z
+        semX.acquire();
+        semZ.acquire();
+
+        thread_gotoY.AddQueue(1);//go back Y
+        semY.acquire();
+    }
+    
+    public void manualCalibrate(int posZ, int posX) throws InterruptedException{
+
+        posZ *= 2;
+        //goto X,Z
+        thread_gotoZ.AddQueue(posZ);
+        thread_gotoX.AddQueue(posX);
+
+        //ESPERAR por X,Z
+
+        semX.acquire();
+        semZ.acquire();
     }
 
     public static void releaseSemZ(){

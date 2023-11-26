@@ -37,6 +37,13 @@ public class AxisX implements Axis{
 
         this.stop();
     }
+    
+    public void gotoPos(int pos,ThreadGoto t){
+
+        
+
+    }
+
 }       
         //to be developed inJAVA
      

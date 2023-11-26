@@ -13,12 +13,11 @@ public class App {
     //MAIN****************************************************************************************************************************
     public static void main(String[] args) throws Exception {
 
-        stock = new Stock();
-
         System.out.println("Labwork2 from Java");
         Storage.initializeHardwarePorts();
-        Mec = new Mechanism();
+        Mec   = new Mechanism();
 
+        stock = new Stock();
         menu();
         //TODO: Close all threads
     }
@@ -54,9 +53,11 @@ public class App {
             
             System.out.println(
                 "Options:\n"+
+                "   (M)anual calibration  \n"+
                 "   (A)uto calibration    \n"+
                 "   (S)earch Items        \n"+
                 "   Add (I)tem            \n"+
+                "   (D)eliver Item        \n"+
                 "   (C)hange Item Location\n"+
                 "   (P)rint System Info   \n"+
                 "   (L)ist all Items      \n"+
@@ -74,6 +75,10 @@ public class App {
             }
 
             switch ( Character.toUpperCase( input.charAt(0)) ) {
+                case 'M': 
+                    manualCalibration(scan);
+                    break; 
+                
                 case 'A': 
                     Mec.autoCalibrate(); 
                     break; 
@@ -93,12 +98,16 @@ public class App {
                 case 'P':
                     SystemInfo(scan); 
                     break;
+
                 case 'S':
                     SearchItems(scan); 
                     break;
+
+                case 'D':
+                    Deliver(scan);
                 default:
                 //DEBUG
-                    System.out.println( Mec.getPalleteSen());
+                    Mechanism.thread_led1.Off();
                     scan.nextLine();
                     break; //not working
             }
@@ -239,6 +248,8 @@ public class App {
         
         if( Items.size() == 0 ){
             System.out.println("Storage is empty!");
+            System.out.println( "Press any key to exit");
+            scanner.nextLine();
             return;
         }
 
@@ -354,6 +365,96 @@ public class App {
 
         stock.ChangeItems(z1,x1,z2,x2);
 
+    }
+
+    private static void Deliver(Scanner scanner){
+        
+        String input; 
+        char caux;
+        int[] pos;
+        int ref;
+
+        while(true){
+            System.out.print("\033[H\033[2J");  
+            System.out.println(
+                "    ____         __ _                       __  ___                         \n" +
+                "   / __ \\ ___   / /(_)_   __ ___   _____   /  |/  /___   ____   __  __     \n" +
+                "  / / / // _ \\ / // /| | / // _ \\ / ___/  / /|_/ // _ \\ / __ \\ / / / /  \n" +
+                " / /_/ //  __// // / | |/ //  __// /     / /  / //  __// / / // /_/ /       \n" +
+                "/_____/ \\___//_//_/  |___/ \\___//_/     /_/  /_/ \\___//_/ /_/ \\__,_/    \n"
+            );
+            System.out.print("Choose the Item by (R)eference, (P)osition or (Q)uit: ");
+            input = scanner.nextLine();
+
+            caux = input.isBlank() ? 'Q' : Character.toUpperCase( input.charAt(0));
+            
+            if( caux == 'P'){
+                
+                while( true ){
+                    System.out.println("Insert the position(x,z) or \'q\' to quit: ");
+
+                    input = scanner.nextLine();
+                    input = input.isBlank() ? "n" : input;
+
+                    if( Character.toUpperCase(input.charAt(0)) == 'Q' ){
+                        return;
+                    }
+                    try {
+                        pos = ReadPos(input);
+                    } catch (Exception e) {
+                        System.out.println("Invalid input!\n"+ e);
+                        System.out.println( "Press any key to continue");
+                        scanner.nextLine();
+                        continue;
+                    }
+
+                    if(pos[0] == -1){
+                        return;
+                    }
+
+                    stock.RemoveItem(pos[1], pos[0]);
+                    try {
+                        Mec.takePartFromCell(pos[1], pos[0]);
+                        Mec.GotoReference();
+                        System.out.println("Press any key to continue");
+                        scanner.nextLine();//wait for enter
+                        Mec.linguarudo();//para meter a lingua para dentro :P
+                    } catch (InterruptedException e) {
+                        //TODO: Erro
+                    }
+                    break;
+                }
+            }else if( caux == 'R' ){
+
+                System.out.println("Insert the Reference or \'q\' to quit: ");
+                
+                input = scanner.nextLine();
+                input = input.isBlank() ? "n" : input;
+
+                if( Character.toUpperCase(input.charAt(0)) == 'Q' ){
+                    return;
+                }
+                try {
+                    ref = Integer.parseInt(input);
+                } catch (Exception e) {
+                    System.out.println("Invalid input!\n"+ e);
+                    System.out.println( "Press any key to continue");
+                    scanner.nextLine();
+                    continue;
+                }
+
+                pos = stock.GetPosByRef(ref);
+                stock.RemoveItem(pos[1], pos[0]);
+                try {
+                    Mec.takePartFromCell(pos[1], pos[0]);
+                    Mec.GotoReference();
+                } catch (InterruptedException e) {
+                    //TODO: Erro
+                }
+                break;
+            }
+            return;
+        }
     }
 
     private static void AddItem(Scanner scanner){
@@ -472,8 +573,12 @@ public class App {
             break;
         }
         try {
+            Mec.GotoReference();
+            scanner.nextLine();//wait for enter
+            System.out.println("Press any key to continue");
+            Mec.linguarudo();//para meter a lingua para dentro :P
             Mec.putPartInCell(z,x);
-        } catch (InterruptedException e) {
+        }catch (InterruptedException e) {
             System.out.println("Error Function Main-->AddItem-->puPartInCellmenu" + e);
         }
     }
@@ -507,5 +612,38 @@ public class App {
         return pos;
 
     }
+    private static void manualCalibration(Scanner scanner) throws InterruptedException{
+       
+        while(true){
 
+            int posX,posZ;
+            String input;  
+            int[] pos = new int[2];
+
+            System.out.println("Insert the position(x,z) or \'q\' to quit: ");
+
+            input = scanner.nextLine();
+            input = input.isBlank() ? "n" : input;
+
+            if( Character.toUpperCase(input.charAt(0)) == 'Q' ){
+                return;
+            }
+            try {
+                pos = ReadPos(input);
+            } catch (Exception e) {
+                System.out.println("Invalid input!\n"+ e);
+                continue;
+            }
+            
+            if(pos[0] == 'q'){break;}
+
+            if( pos[0] == -1){
+                return;
+            }
+            posX  = pos[0];
+            posZ  = pos[1];
+            pos = null; 
+            Mec.manualCalibrate(posZ,posX);
+        }
+    }
 }

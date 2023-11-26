@@ -9,6 +9,7 @@ public class ThreadCalibration extends Thread{
 
     public ThreadCalibration(Axis axis){//constructor
 
+        
         this.axis = axis;
         this.runOnce = true;
         this.semCalibrate = new Semaphore(0);
@@ -32,10 +33,10 @@ public class ThreadCalibration extends Thread{
         }
 
         if(runOnce){
-        axis.moveForward();
-        while (axis.getPos() == -1) { } //stay in loop, se estiver em movimento
-        axis.stop();
-        runOnce = false;
+            axis.moveForward();
+            while (axis.getPos() == -1) { } //stay in loop, se estiver em movimento
+            axis.stop();
+            runOnce = false;
         }
         
         if(axis.getPos() != 1){
