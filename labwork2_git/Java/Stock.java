@@ -1,3 +1,4 @@
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 
@@ -5,13 +6,12 @@ public class Stock {
     
     private static final int Dimx = 3;
     private static final int Dimz = 3;
+    public  static final int cap = Dimz*Dimx;
     private Cell[][] StockMatrix;
-    private int cap;
     private int CapUtilized;
 
     public Stock() {
         StockMatrix = new Cell[Dimz][Dimx];
-        cap         = Dimz*Dimx;
         CapUtilized = 0;
     }
 
@@ -48,12 +48,42 @@ public class Stock {
             return -2;
         }
 
+        StockMatrix[z][x].thread.interrupt();
         StockMatrix[z][x] = null;
         --CapUtilized;
         return 0;
     }
 
-    //Item at z2,x2 must be empty
+    //Returns Arraylist of int[2]
+    //Where pos 0 --> x
+    //And   pos 1 --> z
+    public ArrayList<int[]> GetItemsReady(){
+
+        ArrayList<int[]> items = new ArrayList<int[]>();
+        int[] iaux;
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime timeaux;
+
+        for(int z = 0; z < Dimz; ++z){
+
+            for(int x =0;x < Dimx; ++x){
+                
+                timeaux = StockMatrix[ z ][ x ].date;
+                
+                if( Duration.between( timeaux, now ).toSeconds() <= 0 ){
+                    iaux = new int[2];
+                    iaux[0] = x;
+                    iaux[1] = z; 
+                    items.add( iaux );
+                }
+            }
+        }
+
+        return items;
+
+    }
+
+    //Cell at z2,x2 must be empty
     public void ChangeItems(int z1,int x1,int z2,int x2){
 
         --z1;
@@ -95,6 +125,9 @@ public class Stock {
         return StockMatrix[--z][--x].ref;
     }
 
+    //Returns ArrayList of int[2]
+    //Where pos 0 --> x
+    //And   pos 1 --> z
     public ArrayList<int[]> GetCellsByRef(int ref){
         
         ArrayList<int[]> ret = new ArrayList<int[]>();

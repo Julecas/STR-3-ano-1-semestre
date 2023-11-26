@@ -1,14 +1,22 @@
 import java.util.concurrent.Semaphore;
 
 public class ThreadCalibration extends Thread{
+    
     private final Axis axis;
     private boolean runOnce;
     private Semaphore semCalibrate;
+    private boolean stop;
 
     public ThreadCalibration(Axis axis){//constructor
+
         this.axis = axis;
         this.runOnce = true;
         this.semCalibrate = new Semaphore(0);
+        stop = false;
+    }
+
+    public void kill(){
+        stop = true;
     }
 
     public void SemaphoreCalibrateRelease(){
@@ -39,7 +47,7 @@ public class ThreadCalibration extends Thread{
 
     @Override
     public void run(){
-        while(true){
+        while(!stop){
                 this.initializeCalibration();
             }
     }

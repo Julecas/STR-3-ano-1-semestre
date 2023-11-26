@@ -3,31 +3,24 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Scanner;
 import java.lang.Math;
-//import java.util.concurrent.ArrayBlockingQueue;
-//import java.util.concurrent.Semaphore;
 
 public class App {
+    
     private static Mechanism Mec;
-    private static int posX = 0;
-    private static int posZ = 0;
-    private static int op = -1;
     private static Stock stock;
     private static DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
     
     //MAIN****************************************************************************************************************************
     public static void main(String[] args) throws Exception {
 
-        posX = 0;
-        posZ = 0;
-        op = -1;
         stock = new Stock();
 
         System.out.println("Labwork2 from Java");
         Storage.initializeHardwarePorts();
         Mec = new Mechanism();
 
-
         menu();
+        //TODO: Close all threads
     }
      //***********************************************************************************************************************************
 
@@ -75,7 +68,9 @@ public class App {
             input = scan.nextLine();
 
             if( input.isEmpty() ||  Character.toUpperCase( input.charAt(0) ) == 'Q'){
-                break;
+                scan.nextLine();
+                scan.close();
+                return;
             }
 
             switch ( Character.toUpperCase( input.charAt(0)) ) {
@@ -108,7 +103,7 @@ public class App {
                     break; //not working
             }
         }
-        scan.close();
+        //scan.close();
     }
 
     public static int firstDigit(int op){
@@ -228,9 +223,9 @@ public class App {
                 }else{
                     for(int[] p:cells){
                         System.out.println("("+((int)p[0] + 1) +","+((int)p[1] + 1  )+")");
+                    }
                         System.out.println( "Press any key to continue");
                         scanner.nextLine();
-                    }
                 }
             }
         }

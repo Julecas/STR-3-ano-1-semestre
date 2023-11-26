@@ -3,7 +3,7 @@ import java.util.concurrent.Semaphore;
 
 public class ThreadPallete extends Thread{
 
-    private final Axis axisX;
+    //private final Axis axisX;
     private final Axis axisZ;
     private final Axis axisY;
     private Semaphore  semY;
@@ -11,7 +11,7 @@ public class ThreadPallete extends Thread{
     public ThreadPallete(Axis axisX ,Axis axisZ,Axis axisY){ //constructor
         this.axisZ = axisZ;
         this.axisY = axisY;
-        this.axisX = axisX;
+        //this.axisX = axisX;
         this.semY = new Semaphore(0);
     }
 

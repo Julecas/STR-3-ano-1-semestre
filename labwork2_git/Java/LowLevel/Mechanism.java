@@ -10,6 +10,7 @@ public class Mechanism {
     private ThreadGoto thread_gotoX;
     private ThreadGoto thread_gotoZ;
     private ThreadGoto thread_gotoY; 
+    private ThreadLed1 thread_led1;
     private static Semaphore semX; 
     private static Semaphore semY; 
     private static Semaphore semZ;
@@ -17,22 +18,23 @@ public class Mechanism {
     public Mechanism(){
         
         //start variables
-        semX = new Semaphore(0);
-        semZ = new Semaphore(0);
-        semY = new Semaphore(0);
-        axisX = new AxisX();
-        axisY = new AxisY();
-        axisZ = new AxisZ();
-        thread_gotoX = new ThreadGoto(axisX);
-        thread_gotoZ = new ThreadGoto(axisZ);
-        thread_gotoY = new ThreadGoto(axisY);
-        thread_calibrateZ = new ThreadCalibration(axisZ);
-        thread_calibrateX = new ThreadCalibration(axisX);
-
-         
+        semX                = new Semaphore(0);
+        semZ                = new Semaphore(0);
+        semY                = new Semaphore(0);
+        axisX               = new AxisX();
+        axisY               = new AxisY();
+        axisZ               = new AxisZ();
+        thread_gotoX        = new ThreadGoto(axisX);
+        thread_gotoZ        = new ThreadGoto(axisZ);
+        thread_gotoY        = new ThreadGoto(axisY);
+        thread_calibrateZ   = new ThreadCalibration(axisZ);
+        thread_calibrateX   = new ThreadCalibration(axisX);
+        thread_led1         = new ThreadLed1();
+ 
         //start threads
-         Goto(thread_gotoX,thread_gotoY,thread_gotoZ);
-         calibrate(thread_calibrateX, thread_calibrateZ); 
+        Goto(thread_gotoX,thread_gotoY,thread_gotoZ);
+        calibrate(thread_calibrateX, thread_calibrateZ); 
+        thread_led1.start();
     }
 
     public void calibrate(Thread thread_calibrateX,Thread thread_calibrateZ){

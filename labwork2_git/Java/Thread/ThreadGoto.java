@@ -2,13 +2,19 @@ import java.util.concurrent.ArrayBlockingQueue;
 
 public class ThreadGoto extends Thread{
 
-    private  ArrayBlockingQueue<Integer> mbx_pos;
+    private ArrayBlockingQueue<Integer> mbx_pos;
     private static final int MCap = 10;
     private final Axis axis;
+    private boolean stop;
 
     public ThreadGoto(Axis axis){ //constructor
         this.axis = axis;
         this.mbx_pos = new ArrayBlockingQueue<Integer>(MCap);
+        stop = false;
+    }
+
+    public void kill(){
+        stop = true;
     }
 
     public int axisCurrentPos(){ 
@@ -22,7 +28,7 @@ public class ThreadGoto extends Thread{
         try {
             pos = mbx_pos.take();
         } catch (InterruptedException e) {
-            System.out.println("Erro: "+ e);
+            System.out.println("Error: "+ e);
             return;
         }
 
@@ -48,7 +54,7 @@ public class ThreadGoto extends Thread{
     @Override
     public void run(){
 
-        while(true){//to keep running
+        while(!stop){//to keep running
             this.initializeGoto();
         }
     }

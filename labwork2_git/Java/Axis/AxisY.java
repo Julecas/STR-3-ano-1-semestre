@@ -1,6 +1,3 @@
-
-
-
 public class AxisY implements Axis{
    
     @Override
