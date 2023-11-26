@@ -32,12 +32,11 @@ public class ThreadGoto extends Thread{
             return;
         }
 
-        if(axis.getPos() == pos){}// se já estiver na posição correta não faz nada
-        else{
-            axis.gotoPos(pos);
-            while(axis.getPos() != pos){}
-            axis.stop();
-        }
+        //System.out.println("Af,mbx Pos =" + pos);
+
+        axis.gotoPos(pos);
+        while(axis.getPos() != pos){}
+        axis.stop();
 
         //release semaphores
         if(this.axis == Mechanism.axisX){
@@ -49,6 +48,7 @@ public class ThreadGoto extends Thread{
         if(this.axis == Mechanism.axisY){
             Mechanism.releaseSemY();
         }
+
     }
     
     @Override

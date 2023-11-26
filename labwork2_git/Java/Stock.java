@@ -48,7 +48,7 @@ public class Stock {
             return -2;
         }
 
-        StockMatrix[z][x].thread.interrupt();
+        StockMatrix[z][x].thread.kill();
         StockMatrix[z][x] = null;
         --CapUtilized;
         return 0;
@@ -123,6 +123,24 @@ public class Stock {
         }
 
         return StockMatrix[--z][--x].ref;
+    }
+
+    public int[] GetPosByRef(int ref){
+        int[] pos = new int[2];
+        pos[0] = -1;
+
+        for(int z = 0; z < Dimz;++z){
+
+            for(int x = 0; x < Dimx;++x){
+
+                if( this.StockMatrix[z][x] != null && this.StockMatrix[z][x].ref == ref ){
+                    pos[0] = x;
+                    pos[1] = z;
+                    return pos;
+                }
+            }
+        }
+        return pos;
     }
 
     //Returns ArrayList of int[2]

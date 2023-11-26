@@ -3,12 +3,15 @@ import java.util.concurrent.Semaphore;
 public class ThreadCalibration extends Thread{
     
     private final Axis axis;
+    private boolean runOnce;
     private Semaphore semCalibrate;
     private boolean stop;
 
     public ThreadCalibration(Axis axis){//constructor
 
+        
         this.axis = axis;
+        this.runOnce = true;
         this.semCalibrate = new Semaphore(0);
         stop = false;
     }
@@ -29,10 +32,11 @@ public class ThreadCalibration extends Thread{
             System.out.println("Erro" + e);
         }
 
-        if(axis.getPos() == -1){
-        axis.moveForward();
-        while (axis.getPos() == -1) { } //stay in loop, se estiver em movimento
-        axis.stop();
+        if(runOnce){
+            axis.moveForward();
+            while (axis.getPos() == -1) { } //stay in loop, se estiver em movimento
+            axis.stop();
+            runOnce = false;
         }
         
         if(axis.getPos() != 1){
