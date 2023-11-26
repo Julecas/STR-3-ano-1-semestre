@@ -22,8 +22,8 @@ public class Stock {
 
         --z;
         --x;
-        if( IsPosValid(z+1,x+1) ){
-            return -1;
+        if( !IsPosValid(z+1,x+1) ){
+            return -2;
         }
         
         if( IsPosOccupied(z+1,x+1) ){
@@ -41,7 +41,7 @@ public class Stock {
         --z;
         --x;       
   
-        if( !IsPosOccupied(z+1,x+1) ){
+        if( IsPosOccupied(z+1,x+1) ){
             return -1;
         }
         if( !IsPosValid(z+1, x+1) ){
@@ -68,8 +68,8 @@ public class Stock {
         --z;
         --x;
         return
-               z < 0 || z > Dimz
-            || x < 0 || x > Dimx;
+               z < 0 || z < Dimz
+            || x < 0 || x < Dimx;
     }
 
     public boolean IsPosOccupied( int z, int x){

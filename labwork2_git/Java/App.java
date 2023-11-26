@@ -47,39 +47,65 @@ public class App {
                     "||/_/  /_/ \\___//_/ /_/ \\__,_/    ||\n" +
                     "++================================++\n"
                 ); 
-              
+            /* 
             System.out.println(
                 "Options:\n"+
-                "   Auto calibration(a)\n"+
-                "   Search Items(s)\n"+
-                "   Add Item(i)\n"+
+                "   Auto calibration    (a)\n"+
+                "   Search Items        (s)\n"+
+                "   Add Item            (i)\n"+
                 "   Change Item Location(c)\n"+
-                "   Print System Info(p)\n"+
-                "   List all Items(l)"
+                "   Print System Info   (p)\n"+
+                "   List all Items      (l)\n"+
+                "   Quit                (q)"
+            ); */
+            
+            System.out.println(
+                "Options:\n"+
+                "   (A)uto calibration    \n"+
+                "   (S)earch Items        \n"+
+                "   Add (I)tem            \n"+
+                "   (C)hange Item Location\n"+
+                "   (P)rint System Info   \n"+
+                "   (L)ist all Items      \n"+
+                "   (Q)uit                "
             );
+            
             System.out.print("Enter an option:");
             
             input = scan.nextLine();
 
-            if(input.charAt(0) == 'q'){
+            if( input.isEmpty() ||  Character.toUpperCase( input.charAt(0) ) == 'Q'){
                 break;
             }
 
-            switch (input.charAt(0)) {
-                case 'a': {Mec.autoCalibrate(); break;} //AUTO CALIBRATE DONNE
-                case 'i':   {//put part in cell DONE
+            switch ( Character.toUpperCase( input.charAt(0)) ) {
+                case 'A': 
+                    Mec.autoCalibrate(); 
+                    break; 
+
+                case 'I':  
                     AddItem(scan);
-                    break;}
-                case 'c':{//to change
-                    op = scan.nextInt();
-                    posZ = firstDigit(op);
-                    posX = lastDigit(op);
-                    Mec.takePartFromCell(posZ,posX);
-                    break;}
-                case 'l':{ListItemsInStock(scan); break;} //LIST ITEMS DONNE
-                case 'p':{SystemInfo(scan); break;}//SYS INFO DONNE
-                case 's':{SearchItems(scan); break;}//SYS INFO DONNE
-                default:{System.out.println( Mec.getPalleteSen());scan.nextLine();break;} //not working
+                    break;
+
+                case 'C':
+                    ChangeItem(scan);
+                    break;
+
+                case 'L':
+                    ListItemsInStock(scan);
+                    break;
+                  
+                case 'P':
+                    SystemInfo(scan); 
+                    break;
+                case 'S':
+                    SearchItems(scan); 
+                    break;
+                default:
+                //DEBUG
+                    System.out.println( Mec.getPalleteSen());
+                    scan.nextLine();
+                    break; //not working
             }
         }
         scan.close();
@@ -125,7 +151,7 @@ public class App {
             System.out.println("Search by reference, position or quit(R/p/q)?");
             
             input = scanner.nextLine();
-            caux  = input.charAt(0);
+            caux  = input.isBlank() ? 'R' :input.charAt(0);
             
             if(  caux == 'q' ||  caux == 'Q'){
                 return;
@@ -135,11 +161,17 @@ public class App {
                 System.out.println("Insert the position(x,z) or \'q\' to quit: ");
 
                 input = scanner.nextLine();
+                input = input.isBlank() ? "n" : input;
 
+                if( Character.toUpperCase(input.charAt(0)) == 'Q' ){
+                    return;
+                }
                 try {
                     pos = ReadPos(input);
                 } catch (Exception e) {
                     System.out.println("Invalid input!\n"+ e);
+                    System.out.println( "Press any key to continue");
+                    scanner.nextLine();
                     continue;
                 }
 
@@ -149,11 +181,15 @@ public class App {
                 int res = stock.GetCellsByPos(pos[1], pos[0]);
 
                 if( res == -2 ){
-                    System.out.println("Invalid position!\n");
+                    System.out.println("Invalid position("+pos[0]+","+pos[1]+")!\n");
+                    System.out.println( "Press any key to continue");
+                    scanner.nextLine();
                     continue;
                 }
                 if( res == -1 ){
-                    System.out.println("Position empty!\n");
+                    System.out.println("Position empty("+pos[0]+","+pos[1]+")!\n");
+                    System.out.println( "Press any key to continue");
+                    scanner.nextLine();
                     continue;
                 }
 
@@ -161,17 +197,25 @@ public class App {
                     "The Item's reference at("+pos[0]+","+pos[1]+")\n"+
                     "Is: "+res
                 );
+                System.out.print("Press any key to continue: ");
+                scanner.nextLine();
 
             }else{
                 
                 System.out.println("Insert the Reference or \'q\' to quit: ");
                 
                 input = scanner.nextLine();
-                
+                input = input.isBlank() ? "n" : input;
+
+                if( Character.toUpperCase(input.charAt(0)) == 'Q' ){
+                    return;
+                }
                 try {
                     ref = Integer.parseInt(input);
                 } catch (Exception e) {
                     System.out.println("Invalid input!\n"+ e);
+                    System.out.println( "Press any key to continue");
+                    scanner.nextLine();
                     continue;
                 }
 
@@ -179,9 +223,11 @@ public class App {
 
                 if( cells.size() == 0 ){
                     System.out.println("There are no Items with the reference number("+ref+")");
+                    System.out.print("Press any key to continue: ");
+                    scanner.nextLine();
                 }else{
                     for(int[] p:cells){
-                        System.out.println("("+p[0]+","+p[1]+")");
+                        System.out.println("("+((int)p[0] + 1) +","+((int)p[1] + 1  )+")");
                         System.out.println( "Press any key to continue");
                         scanner.nextLine();
                     }
@@ -236,7 +282,11 @@ public class App {
             System.out.println("Insert the position(x,z) or \'q\' to quit: ");
 
             input = scanner.nextLine();
+            input = input.isBlank() ? "n" : input;
 
+            if( Character.toUpperCase(input.charAt(0)) == 'Q' ){
+                return;
+            }
             try {
                 pos = ReadPos(input);
             } catch (Exception e) {
@@ -264,7 +314,11 @@ public class App {
             System.out.println("Insert the new position position(x,z) or \'q\' to quit: ");
 
             input = scanner.nextLine();
+            input = input.isBlank() ? "n" : input;
 
+            if( Character.toUpperCase(input.charAt(0)) == 'Q' ){
+                return;
+            }
             try {
                 pos = ReadPos(input);
             } catch (Exception e) {
@@ -288,7 +342,20 @@ public class App {
             break;
         }
          
-        //TODO: trocar 
+
+        try {
+            Mec.takePartFromCell(z1,x1);
+        } catch (InterruptedException e) {
+            System.out.println("Error Trying to take Item in Main-->ChangeItem-->takePartFromCell");
+            return;
+        }
+        
+        try {
+            Mec.putPartInCell(z2,x2);
+        } catch (InterruptedException e) {
+            System.out.println("Error Trying to Put Item in Main-->ChangeItem-->putPartInCell");
+            return;
+        }
 
         stock.ChangeItems(z1,x1,z2,x2);
 
@@ -311,7 +378,11 @@ public class App {
                 System.out.println("Insert the position(x,z) or \'q\' to quit: ");
 
                 input = scanner.nextLine();
+                input = input.isBlank() ? "n" : input;
 
+                if( Character.toUpperCase(input.charAt(0)) == 'Q' ){
+                    return;
+                }
                 try {
                     pos = ReadPos(input);
                 } catch (Exception e) {
@@ -333,6 +404,11 @@ public class App {
 
                 System.out.println("Insert Shipment date(DD/MM/YYYY hh:mm:ss) or \'q\' to quit:");
                 input = scanner.nextLine();
+                input = input.isBlank() ? "n" : input;
+
+                if( Character.toUpperCase(input.charAt(0)) == 'Q' ){
+                    return;
+                }
 
                 try {
                     ShipDate = LocalDateTime.parse(input,formatter);
@@ -344,13 +420,28 @@ public class App {
             }
 
             //load name
-            System.out.println("Insert Load Name or \'q\' to quit: ");
-            LoadName = scanner.nextLine();
+            
+            while(true){
+                System.out.println("Insert Load Name or \'q\' to quit: ");
+                input = scanner.nextLine();
+                
+                if( input.isBlank()){ continue; }
 
+                if( Character.toUpperCase(input.charAt(0)) == 'Q' ){
+                    return;
+                }
+                LoadName = input;
+                break;
+            }
             //reference code
             while(true){
                 System.out.println("Insert reference code or \'q\' to quit: ");
                 input = scanner.nextLine();
+                input = input.isBlank() ? "n" : input;
+
+                if( Character.toUpperCase(input.charAt(0)) == 'Q' ){
+                    return;
+                }
 
                 try{
                     ref = Integer.parseInt(input);
@@ -367,6 +458,8 @@ public class App {
                                "    Shipment Date: "+ShipDate.format(formatter)); 
         
             input = scanner.nextLine();
+            input = input.isBlank() ? "y" : input;
+
             if( input.indexOf(0) == 'n' || input.indexOf(0) == 'N' ){
                 continue;
             }
@@ -386,8 +479,7 @@ public class App {
         try {
             Mec.putPartInCell(z,x);
         } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
-            System.out.println("Error put part in cell menu" + e);
+            System.out.println("Error Function Main-->AddItem-->puPartInCellmenu" + e);
         }
     }
 
