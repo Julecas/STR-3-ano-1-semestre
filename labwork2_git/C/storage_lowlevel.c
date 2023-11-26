@@ -162,6 +162,13 @@ void ledOn(int led) {
     writeDigitalU8(2, p);
 }
 
+/* Sensors */
+
+int getPalleteSen() {
+    uInt8 p1 = readDigitalU8(1);
+    return (p1 & 0b10000) >> 4;
+}
+
 void ledsOff() {
     uInt8 p = readDigitalU8(2);
     setBitValue(&p, 1, 0);

@@ -2,6 +2,9 @@
 #include <jni.h>
 #include <storage.h>
 
+	JNIEXPORT int JNICALL Java_Storage_getPalleteSen(JNIEnv* jnienv, jclass jclass) {
+		getPalleteSen();
+	}
 
 	JNIEXPORT void JNICALL Java_Storage_initializeHardwarePorts(JNIEnv* jnienv, jclass jclass){
 		initializeHardwarePorts();
