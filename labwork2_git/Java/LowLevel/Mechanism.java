@@ -1,4 +1,3 @@
-import java.util.Scanner;
 import java.util.concurrent.Semaphore;
 
 public class Mechanism {
@@ -162,8 +161,6 @@ public class Mechanism {
         thread_gotoZ.AddQueue(posZ);
         thread_gotoX.AddQueue(posX);
 
-        //ESPERAR por X,Z
-    
         semX.acquire();
         semZ.acquire();
         
@@ -191,8 +188,6 @@ public class Mechanism {
         thread_gotoZ.AddQueue(posZ);
         thread_gotoX.AddQueue(posX);
 
-        //ESPERAR por X,Z
-    
         semX.acquire();
         semZ.acquire();
         
@@ -257,7 +252,6 @@ public class Mechanism {
 
     public void close() {
 
-        System.out.println("Goodbey!!");
         thread_manager.KillAll();
         thread_switch.stop();
 

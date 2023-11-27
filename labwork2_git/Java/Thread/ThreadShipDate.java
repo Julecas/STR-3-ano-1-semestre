@@ -7,7 +7,6 @@ public class ThreadShipDate extends Thread implements Threadx{
     boolean shipped;
     private boolean stop;
     private boolean alive;
-    //ThreadLed1 TLed;
     
     public ThreadShipDate(Cell c){
         
@@ -16,7 +15,6 @@ public class ThreadShipDate extends Thread implements Threadx{
         shipped = false;
         stop    = false;
         alive   = true;
-        //TLed = Mechanism.thread_led1;
     }
 
     public void Pause(){

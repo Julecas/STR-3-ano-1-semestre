@@ -100,8 +100,6 @@ public class ThreadSwitch extends Thread {
                 mec.linguarudo();
             } catch (InterruptedException e) {
             }
-
-            //scanner.nextLine();//eu sei que não é boa  pratica fazer isto aqui shh
         }
     }  
         

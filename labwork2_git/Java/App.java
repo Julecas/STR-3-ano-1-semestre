@@ -45,6 +45,7 @@ public class App {
     public static void menu(AddItem Ad, Mechanism Mec, Stock stock, DateTimeFormatter formatter,Scanner scan ) throws InterruptedException {
        
         String input;
+        char c;
         
         while(true){
             System.out.print("\033[H\033[2J");  
@@ -79,44 +80,45 @@ public class App {
                 scan.nextLine();
                 return;
             }
+            for( int i = 0;i < input.length();++i ){
 
-            switch ( Character.toUpperCase( input.charAt(0)) ) {
-                case 'M': 
-                    Mc.manualCalibration(scan,formatter,Mec,stock); 
-                    break; 
-                
-                case 'A': 
-                    Mec.autoCalibrate(); 
-                    break; 
+                c = Character.toUpperCase(input.charAt(i));
 
-                case 'I':  
-                    Ad.AddItems(scan,formatter,Mec,stock); 
-                    break;
+                switch ( c ) {
+                    case 'M': 
+                        Mc.manualCalibration(scan,formatter,Mec,stock); 
+                        break; 
 
-                case 'C':
-                    Ci.ChangeItems(scan,formatter,Mec,stock);
-                    break;
+                    case 'A': 
+                        Mec.autoCalibrate(); 
+                        break; 
 
-                case 'L':
-                    Li.ListItemsInStock(scan,stock,formatter);
-                    break;
-                  
-                case 'P':
-                    S_info.SystemInformation(scan,stock,formatter); 
-                    break;
+                    case 'I':  
+                        Ad.AddItems(scan,formatter,Mec,stock); 
+                        break;
 
-                case 'S':
-                    S_item.SearchItems(scan,formatter,Mec,stock); 
-                    break;
+                    case 'C':
+                        Ci.ChangeItems(scan,formatter,Mec,stock);
+                        break;
 
-                case 'D':
-                    D.Deliver(scan,formatter,Mec,stock);
-                    break;
-                default:
-                //DEBUG
-                    Mechanism.thread_led1.Off();
-                    scan.nextLine();
-                    break; 
+                    case 'L':
+                        Li.ListItemsInStock(scan,stock,formatter);
+                        break;
+
+                    case 'P':
+                        S_info.SystemInformation(scan,stock,formatter); 
+                        break;
+
+                    case 'S':
+                        S_item.SearchItems(scan,formatter,Mec,stock); 
+                        break;
+
+                    case 'D':
+                        D.Deliver(scan,formatter,Mec,stock);
+                        break;
+                    default:
+                        break;
+                }
             }
         }
     }
