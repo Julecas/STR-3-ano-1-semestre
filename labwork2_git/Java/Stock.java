@@ -38,10 +38,9 @@ public class Stock {
 
     public int RemoveItem(int z,int x){
  
-        --z;
+        --z;    
         --x;       
-  
-        if( IsPosOccupied(z+1,x+1) ){
+        if( !IsPosOccupied(z+1,x+1) ){
             return -1;
         }
         if( !IsPosValid(z+1, x+1) ){
@@ -134,8 +133,8 @@ public class Stock {
             for(int x = 0; x < Dimx;++x){
 
                 if( this.StockMatrix[z][x] != null && this.StockMatrix[z][x].ref == ref ){
-                    pos[0] = x;
-                    pos[1] = z;
+                    pos[0] = x + 1;
+                    pos[1] = z + 1;
                     return pos;
                 }
             }

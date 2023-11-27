@@ -14,7 +14,6 @@ public class ThreadLed1 extends Thread {
  
     public void Off(){
         this.TurnOff = true;
-        System.out.println(TurnOff);
     }
 
     public void add(){

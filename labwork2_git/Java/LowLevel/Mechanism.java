@@ -37,9 +37,6 @@ public class Mechanism {
         calibrate(thread_calibrateX, thread_calibrateZ); 
         thread_led1.start();
 
-        //DEBUG:
-        thread_led1.add();
-
     }
 
     public void calibrate(Thread thread_calibrateX,Thread thread_calibrateZ){
@@ -88,6 +85,49 @@ public class Mechanism {
     public static int getPalleteSen(){
         
         return Storage.getPalleteSen();
+    }
+
+    public boolean checkCell(int posZ, int posX) throws InterruptedException{
+        
+        posZ *= 2;
+        //goto X,Z
+        thread_gotoZ.AddQueue(posZ);
+        thread_gotoX.AddQueue(posX);
+
+        semX.acquire();
+        semZ.acquire();
+
+        thread_gotoZ.AddQueue(posZ-1);//go down Z
+        semZ.acquire();
+
+        thread_gotoY.AddQueue(3);//go to front Y
+        semY.acquire();
+
+        thread_gotoZ.AddQueue(posZ);//go down Z
+        semZ.acquire();
+
+        thread_gotoY.AddQueue(2);//go back Y
+        semY.acquire();
+
+
+        if(getPalleteSen() == 1){
+            //está ocupado (arrumar caixa depois de verificar)
+            thread_gotoY.AddQueue(3);//go to front Y
+            semY.acquire();
+
+            thread_gotoZ.AddQueue(posZ-1);//go down Z
+            semZ.acquire();
+
+            thread_gotoY.AddQueue(2);//go back Y
+            semY.acquire();
+
+            thread_gotoZ.AddQueue(posZ);
+            semZ.acquire();
+            return true;
+        } else{
+            //está livre
+            return false;
+        }
     }
 
     public boolean putPartInCell(int posZ, int posX) throws InterruptedException{

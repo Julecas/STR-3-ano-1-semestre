@@ -33,7 +33,7 @@ public class ThreadShipDate extends Thread{
         LocalDateTime now = LocalDateTime.now();
 
         Duration d = Duration.between(now,cell.date);
-        System.out.println(d.getSeconds());
+        
         if( d.getSeconds() < 0 ){
             signalLed1();
             return;
