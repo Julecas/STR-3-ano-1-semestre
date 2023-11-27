@@ -1,16 +1,41 @@
 import java.time.Duration;
 import java.time.LocalDateTime;
 
-public class ThreadShipDate extends Thread{
+public class ThreadShipDate extends Thread implements Threadx{
 
     Cell cell;
     boolean shipped;
+    private boolean stop;
+    private boolean alive;
     //ThreadLed1 TLed;
     
     public ThreadShipDate(Cell c){
-        cell = c;
+        
+        Mechanism.thread_manager.AddThread(this);
+        cell    = c;
         shipped = false;
+        stop    = false;
+        alive   = true;
         //TLed = Mechanism.thread_led1;
+    }
+
+    public void Pause(){
+        stop = true;
+        this.interrupt();
+    }
+
+    public void UnPause(){
+        stop = false;
+    }
+
+    public void Kill(){
+        
+        if(shipped){
+            Mechanism.thread_led1.Off();
+        }
+        stop  = true;
+        alive = false;
+        this.interrupt();
     }
 
     private void signalLed1(){
@@ -19,33 +44,32 @@ public class ThreadShipDate extends Thread{
         Mechanism.thread_led1.add();
     }
 
-    public void kill(){
-        
-        if(shipped){
-            Mechanism.thread_led1.Off();
-        }
-        this.stop();
 
-    }
 
    @Override
     public void run(){
-        LocalDateTime now = LocalDateTime.now();
 
-        Duration d = Duration.between(now,cell.date);
-        
-        if( d.getSeconds() < 0 ){
-            signalLed1();
-            return;
-        }
-        
-        try {
-            Thread.sleep(d.toMillis());
-        } catch (InterruptedException e) {
-            //Thread got interrupted
-            return;
-        }
-        
-        signalLed1();        
+        while(alive){
+            if(stop)
+                continue;
+
+            LocalDateTime now = LocalDateTime.now();
+
+            Duration d = Duration.between(now,cell.date);
+            
+            if( d.getSeconds() < 0 ){
+                signalLed1();
+                return;
+            }
+
+            try {
+                Thread.sleep(d.toMillis());
+                signalLed1();
+                return; 
+            } catch (InterruptedException e) {
+                //Thread got interrupted
+                continue;
+            }
+        }   
     }
 }

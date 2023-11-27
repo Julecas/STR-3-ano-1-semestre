@@ -38,4 +38,7 @@ public class Storage {
     /* sensors */
     static synchronized native int getPalleteSen();
 
+    static synchronized native byte ReadPort(int p);
+    static synchronized native void WritePort(int p, byte value);
+
 }

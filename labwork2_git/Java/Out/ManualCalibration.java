@@ -17,14 +17,15 @@ public class ManualCalibration {
 
     public void manualCalibration(Scanner scanner, DateTimeFormatter formatter, Mechanism  Mec, Stock stock)  throws InterruptedException{
        
+        char caux;
         while(true){
 
             System.out.println("Insert the position(x,z) or \'q\' to quit: ");
 
             input = scanner.nextLine();
             input = input.isBlank() ? "n" : input;
-
-            if( Character.toUpperCase(input.charAt(0)) == 'Q' ){
+            caux  = Character.toUpperCase(input.charAt(0));
+            if( caux == 'Q' ){
                 return;
             }
             try {
@@ -34,10 +35,9 @@ public class ManualCalibration {
                 continue;
             }
             
-            if(pos[0] == 'q'){break;}
-
             if( pos[0] == -1){
-                return;
+                System.out.println("Invalid input!\n");
+                continue;
             }
             posX  = pos[0];
             posZ  = pos[1];
@@ -72,6 +72,5 @@ public class ManualCalibration {
         }
         
         return pos;
-
     }
 }

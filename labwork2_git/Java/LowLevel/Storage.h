@@ -9,13 +9,6 @@ extern "C" {
 #endif
 /*
  * Class:     Storage
- * Method:    getPalleteSen
- * Signature: ()V
- */
-JNIEXPORT int JNICALL Java_Storage_getPalleteSen
-  (JNIEnv *, jclass);
-/*
- * Class:     Storage
  * Method:    initializeHardwarePorts
  * Signature: ()V
  */
@@ -157,6 +150,30 @@ JNIEXPORT void JNICALL Java_Storage_ledOn
  */
 JNIEXPORT void JNICALL Java_Storage_ledsOff
   (JNIEnv *, jclass);
+
+/*
+ * Class:     Storage
+ * Method:    getPalleteSen
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_Storage_getPalleteSen
+  (JNIEnv *, jclass);
+
+/*
+ * Class:     Storage
+ * Method:    ReadPort
+ * Signature: (I)B
+ */
+JNIEXPORT jbyte JNICALL Java_Storage_ReadPort
+  (JNIEnv *, jclass, jint);
+
+/*
+ * Class:     Storage
+ * Method:    WritePort
+ * Signature: (IB)V
+ */
+JNIEXPORT void JNICALL Java_Storage_WritePort
+  (JNIEnv *, jclass, jint, jbyte);
 
 #ifdef __cplusplus
 }

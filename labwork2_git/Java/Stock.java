@@ -15,6 +15,11 @@ public class Stock {
         CapUtilized = 0;
     }
 
+    public void Reset(){
+        StockMatrix = new Cell[Dimz][Dimx];
+        CapUtilized = 0;
+    }
+
     //-2 pos errada
     //-1 pos ocupada
     // 0 succefull 
@@ -47,7 +52,7 @@ public class Stock {
             return -2;
         }
 
-        StockMatrix[z][x].thread.kill();
+        StockMatrix[z][x].thread.Kill();
         StockMatrix[z][x] = null;
         --CapUtilized;
         return 0;
@@ -67,12 +72,15 @@ public class Stock {
 
             for(int x =0;x < Dimx; ++x){
                 
+                if( !IsPosOccupied(z + 1,x + 1) ){
+                    continue;
+                }
                 timeaux = StockMatrix[ z ][ x ].date;
                 
-                if( Duration.between( timeaux, now ).toSeconds() <= 0 ){
+                if( Duration.between( now , timeaux ).toSeconds() <= 0 ){
                     iaux = new int[2];
-                    iaux[0] = x;
-                    iaux[1] = z; 
+                    iaux[0] = x + 1;
+                    iaux[1] = z + 1; 
                     items.add( iaux );
                 }
             }

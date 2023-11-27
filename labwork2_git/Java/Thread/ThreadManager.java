@@ -2,34 +2,34 @@ import java.util.ArrayList;
 
 public class ThreadManager {
     
-    private ArrayList<Thread> Threads;
+    public ArrayList<Threadx> Threads;
     
     public ThreadManager(){
-        Threads = new ArrayList<Thread>();
+        Threads = new ArrayList<Threadx>();
     }
 
-    public void AddThread(Thread t){
+    public void AddThread(Threadx t){
         Threads.add(t);
     }
 
     public void ResumeAll(){
         
-        for( Thread t: Threads ){
-            t.resume();
+        for( Threadx t: Threads ){
+            t.UnPause();
         }
     }  
 
     public void StopAll(){
         
-        for( Thread t: Threads ){
-            t.suspend();
+        for( Threadx t: Threads ){
+            t.Pause();
         }
-    }   
+    }
 
     public void KillAll(){
         
-        for( Thread t: Threads ){
-            t.stop();
+        for( Threadx t: Threads ){
+            t.Kill();
         }
     }
 

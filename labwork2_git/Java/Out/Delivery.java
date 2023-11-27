@@ -32,7 +32,7 @@ public class Delivery {
 
             input = scanner.nextLine();
 
-            if( input.isBlank() ){ return;}
+            if( input.isBlank() ){ return; }
 
             caux =  Character.toUpperCase( input.charAt(0));
 
@@ -91,7 +91,7 @@ public class Delivery {
                     try {
                         Mec.takePartFromCell(pos[1], pos[0]);
                         Mec.GotoReference();
-                        System.out.println("Press any key to continue");
+                        System.out.println("Remove from Cage and Press any key to continue");
                         scanner.nextLine();//wait for enter
                         Mec.linguarudo();//para meter a lingua para dentro :P
                     } catch (InterruptedException e) {
@@ -132,7 +132,7 @@ public class Delivery {
                 try {
                     Mec.takePartFromCell(pos[1], pos[0]);
                     Mec.GotoReference();
-                    System.out.println("Press any key to continue");
+                    System.out.println("Remove from Cage and Press any key to continue");
                     scanner.nextLine();//wait for enter
                     Mec.linguarudo();//para meter a lingua para dentro :P
                 } catch (InterruptedException e) {

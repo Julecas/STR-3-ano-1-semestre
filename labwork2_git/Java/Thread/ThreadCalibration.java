@@ -1,23 +1,37 @@
 import java.util.concurrent.Semaphore;
 
-public class ThreadCalibration extends Thread{
+public class ThreadCalibration extends Thread implements Threadx{
     
     private final Axis axis;
-    private boolean runOnce;
+    //private boolean runOnce;
     private Semaphore semCalibrate;
     private boolean stop;
+    private boolean alive;
+
+    public void Pause(){
+        stop = true;
+        axis.Pause();
+    }
+
+    public void UnPause(){
+        stop = false;
+        axis.UnPause();
+    }
+
+    public void Kill(){
+        stop  = true;
+        axis.Kill();
+        alive = false;
+    }
 
     public ThreadCalibration(Axis axis){//constructor
 
-        
+        Mechanism.thread_manager.AddThread(this);
         this.axis = axis;
-        this.runOnce = true;
+        //this.runOnce = true;
         this.semCalibrate = new Semaphore(0);
         stop = false;
-    }
-
-    public void kill(){
-        stop = true;
+        alive = true;
     }
 
     public void SemaphoreCalibrateRelease(){
@@ -32,25 +46,25 @@ public class ThreadCalibration extends Thread{
             System.out.println("Erro" + e);
         }
 
-        if(runOnce){
+        if(axis.getPos() == -1){
             axis.moveForward();
-            while (axis.getPos() == -1) { } //stay in loop, se estiver em movimento
+            while (axis.getPos() == -1 && !stop ) { } //stay in loop, se estiver em movimento
             axis.stop();
-            runOnce = false;
         }
         
         if(axis.getPos() != 1){
             axis.gotoPos(1);
-            while(axis.getPos() == -1){}
         }
     }
     
 
     @Override
     public void run(){
-        while(!stop){
+        while(alive){
+        
+            if( !stop )
                 this.initializeCalibration();
-            }
+        }
     }
 
 }

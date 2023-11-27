@@ -1,24 +1,51 @@
+import java.util.Scanner;
 import java.util.concurrent.Semaphore;
 
 public class Mechanism {
     
-    public static AxisZ axisZ;
-    public static AxisX axisX;
-    public static AxisY axisY;
-    private ThreadCalibration thread_calibrateZ;
-    private ThreadCalibration thread_calibrateX;
-    private ThreadGoto thread_gotoX;
-    private ThreadGoto thread_gotoZ;
-    private ThreadGoto thread_gotoY; 
-    public  static ThreadManager thread_manager;
-    public  static ThreadLed1 thread_led1;
-    private static Semaphore semX; 
-    private static Semaphore semY; 
-    private static Semaphore semZ;
+    public  static  AxisZ              axisZ;
+    public  static  AxisX              axisX;
+    public  static  AxisY              axisY;
+    private         ThreadCalibration  thread_calibrateZ;
+    private         ThreadCalibration  thread_calibrateX;
+    private         ThreadGoto         thread_gotoX;
+    private         ThreadGoto         thread_gotoZ;
+    private         ThreadGoto         thread_gotoY; 
+    public  static  ThreadManager      thread_manager;
+    public  static  ThreadSwitch       thread_switch;
+    public  static  ThreadLed1         thread_led1;
+    private static  Semaphore          semX; 
+    private static  Semaphore          semY; 
+    private static  Semaphore          semZ;
     
-    public Mechanism(){
+    public Mechanism(Stock stock){
         
         //start variables
+        thread_manager      = new ThreadManager();
+        semX                = new Semaphore(0);
+        semZ                = new Semaphore(0);
+        semY                = new Semaphore(0);
+        axisX               = new AxisX();
+        axisY               = new AxisY();
+        axisZ               = new AxisZ();
+        thread_gotoX        = new ThreadGoto(axisX);
+        thread_gotoZ        = new ThreadGoto(axisZ);
+        thread_gotoY        = new ThreadGoto(axisY);
+        thread_calibrateZ   = new ThreadCalibration(axisZ);
+        thread_calibrateX   = new ThreadCalibration(axisX);
+        thread_led1         = new ThreadLed1();
+        thread_switch       = new ThreadSwitch(thread_manager, this, stock);
+ 
+        //start threads
+        Goto(thread_gotoX,thread_gotoY,thread_gotoZ);
+        calibrate(thread_calibrateX, thread_calibrateZ); 
+        thread_led1.start();
+        thread_switch.start();
+
+    }
+
+    public void Reset(){
+        //reset variables
         semX                = new Semaphore(0);
         semZ                = new Semaphore(0);
         semY                = new Semaphore(0);
@@ -36,7 +63,6 @@ public class Mechanism {
         Goto(thread_gotoX,thread_gotoY,thread_gotoZ);
         calibrate(thread_calibrateX, thread_calibrateZ); 
         thread_led1.start();
-
     }
 
     public void calibrate(Thread thread_calibrateX,Thread thread_calibrateZ){
@@ -68,18 +94,18 @@ public class Mechanism {
 
     public static boolean switch1Pressed(){
 
-        return Storage.getSwitch1() == 1;
+        return Storage.getSwitch1() == 1; //returns 1 if pressed
 
     }
 
     public static boolean switch2Pressed(){
-        //todo for now returns false
-        return false;
+       
+        return Storage.getSwitch2() == 1;
     }
 
     public static boolean bothSwithcesPressed(){
-        //todo for now returns false
-        return false;
+        
+        return (Storage.getSwitch1_2() == 1);
     }
 
     public static int getPalleteSen(){
@@ -124,10 +150,9 @@ public class Mechanism {
             thread_gotoZ.AddQueue(posZ);
             semZ.acquire();
             return true;
-        } else{
+        } 
             //está livre
-            return false;
-        }
+        return false;
     }
 
     public boolean putPartInCell(int posZ, int posX) throws InterruptedException{
@@ -183,15 +208,14 @@ public class Mechanism {
 
         thread_gotoY.AddQueue(2);//go back Y
         semY.acquire();
-
+        
         return true;
     }
 
     public void linguarudo() throws InterruptedException{
         thread_gotoY.AddQueue(2);//go front Y
-        semY.acquire();
+        semY.acquire();    
     }
-
     public void GotoReference() throws InterruptedException{
        
         //goto X,Z
@@ -229,6 +253,14 @@ public class Mechanism {
 
     public static void releaseSemY(){
         semY.release();
+    }
+
+    public void close() {
+
+        System.out.println("Goodbey!!");
+        thread_manager.KillAll();
+        thread_switch.stop();
+
     }
 
 }

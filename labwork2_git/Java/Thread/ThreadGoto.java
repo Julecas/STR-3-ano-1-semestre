@@ -1,20 +1,37 @@
 import java.util.concurrent.ArrayBlockingQueue;
 
-public class ThreadGoto extends Thread{
+public class ThreadGoto extends Thread implements Threadx{
 
     private ArrayBlockingQueue<Integer> mbx_pos;
     private static final int MCap = 10;
     private final Axis axis;
     private boolean stop;
+    private boolean alive;
 
     public ThreadGoto(Axis axis){ //constructor
+
+        Mechanism.thread_manager.AddThread(this);
         this.axis = axis;
         this.mbx_pos = new ArrayBlockingQueue<Integer>(MCap);
-        stop = false;
+        stop  = false;
+        alive = true;
     }
 
-    public void kill(){
+    public void Pause(){
         stop = true;
+        axis.Pause();
+    }
+
+    public void UnPause(){
+        stop = false;
+        axis.UnPause();
+    }
+
+
+    public void Kill(){
+        axis.Kill();
+        stop  = true;
+        alive = false;
     }
 
     public int axisCurrentPos(){ 
@@ -54,8 +71,10 @@ public class ThreadGoto extends Thread{
     @Override
     public void run(){
 
-        while(!stop){//to keep running
-            this.initializeGoto();
+        while(alive){//to keep running
+            
+            if(!stop)
+                this.initializeGoto();
         }
     }
 

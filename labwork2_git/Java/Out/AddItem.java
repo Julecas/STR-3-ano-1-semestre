@@ -50,13 +50,13 @@ public class AddItem {
                     return;
                 }
 
-                x   = pos[0];
-                z   = pos[1];
-                pos = null; 
+                x = pos[0];
+                z = pos[1];
                 
                 System.out.println("Physical check or only stock check(p/S)?");
                 input = scanner.nextLine();
                 if( !input.isBlank() && Character.toUpperCase(input.charAt(0)) == 'P' ){   
+                    
                     try {
 
                         if( Mec.checkCell(pos[1], pos[0]) ){
@@ -151,7 +151,7 @@ public class AddItem {
             while(true){
 
                 Mec.GotoReference();
-                System.out.println("Press any key to continue");
+                System.out.println("Insert pallet in Cage and Press any key to continue");
                 scanner.nextLine();//wait for enter
                 Mec.linguarudo();//para meter a lingua para dentro :P
 

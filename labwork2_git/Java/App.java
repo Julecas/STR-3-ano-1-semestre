@@ -23,26 +23,28 @@ public class App {
         System.out.println("Labwork2 from Java");
         Storage.initializeHardwarePorts();
         
-        Mec     = new Mechanism();
-        Ad      = new AddItem();
-        Ci      = new ChangeItem();
-        S_item  = new SearchItem();
-        S_info  = new SystemInfo();
-        Li      = new ListItemInStock();
-        D       = new Delivery();
-        Mc      = new ManualCalibration();
-        stock   = new Stock();
+        Scanner scan    = new Scanner(System.in);
+        
+        Ad     = new AddItem();
+        Ci     = new ChangeItem();
+        S_item = new SearchItem();
+        S_info = new SystemInfo();
+        Li     = new ListItemInStock();
+        D      = new Delivery();
+        Mc     = new ManualCalibration();
+        stock  = new Stock();
+        Mec    = new Mechanism(stock);
 
-        menu(Ad,Mec,stock,formatter);
+        menu(Ad,Mec,stock,formatter,scan);
 
-        //TODO: Close all threads
+        Mec.close();
+        scan.close();
     }
      //***********************************************************************************************************************************
 
-    public static void menu(AddItem Ad, Mechanism Mec, Stock stock, DateTimeFormatter formatter ) throws InterruptedException {
+    public static void menu(AddItem Ad, Mechanism Mec, Stock stock, DateTimeFormatter formatter,Scanner scan ) throws InterruptedException {
        
         String input;
-        Scanner scan = new Scanner(System.in);
         
         while(true){
             System.out.print("\033[H\033[2J");  
@@ -75,7 +77,6 @@ public class App {
 
             if( input.isEmpty() ||  Character.toUpperCase( input.charAt(0) ) == 'Q'){
                 scan.nextLine();
-                scan.close();
                 return;
             }
 

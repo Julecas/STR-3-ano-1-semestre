@@ -1,19 +1,26 @@
 import java.util.concurrent.Semaphore;
 
-public class ThreadLed1 extends Thread {
+public class ThreadLed1 extends Thread implements Threadx{
 
     private Semaphore SemStart;
     private int       counting;
-    private boolean   TurnOff;
+    private boolean   TurnOff;    
+    private boolean   alive;
+    private boolean   stop;
 
     public ThreadLed1(){
+
+        Mechanism.thread_manager.AddThread(this);
         this.TurnOff  = false;
         this.SemStart = new Semaphore(0);
         counting      = 0;
+        alive         = true;
+        stop          = false;
     }
  
     public void Off(){
         this.TurnOff = true;
+        this.interrupt();
     }
 
     public void add(){
@@ -27,14 +34,17 @@ public class ThreadLed1 extends Thread {
     @Override
     public void run(){
         
-        while(true){
+        while(alive){
+
+            if( stop )
+                continue;
 
             try {
                 this.SemStart.acquire();
                 --counting;
                 this.TurnOff = false;
             } catch (InterruptedException e) {
-                System.out.println("Error Trying to take semaphore on ThreadLed1"+e);
+                continue;
             }
 
             while( !this.TurnOff ){
@@ -42,16 +52,35 @@ public class ThreadLed1 extends Thread {
                  try {
                     Thread.sleep(500);
                 } catch (InterruptedException e) {
+                    Mechanism.ledsOff();
                 }
 
                 Mechanism.ledOn(1);
                 try {
                     Thread.sleep(500);
                 } catch (InterruptedException e) {
+                    Mechanism.ledsOff();
                 }
-                Mechanism.ledsOff();
-                
+                Mechanism.ledsOff(); 
             }
         }
+    }
+
+    @Override
+    public void Pause() {
+        stop = true;
+        this.interrupt();
+    }
+
+    @Override
+    public void UnPause() {
+        stop = false;
+    }
+
+    @Override
+    public void Kill() {
+        stop  = true;
+        alive = false;
+        this.interrupt();
     }
 }
