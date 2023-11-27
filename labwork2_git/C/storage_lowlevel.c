@@ -76,15 +76,19 @@ void moveZDown(){
 }
 
 void stopZ() {
+
     uInt8 p = readDigitalU8(2);
     setBitValue(&p, 3, 0);  
     setBitValue(&p, 2, 0);  
     writeDigitalU8(2, p);
+
 }
 
 int getZPos() {
+
     uInt8 p0 = readDigitalU8(0);
     uInt8 p1 = readDigitalU8(1);
+
     if (!getBitValue(p1, 3)) return 1; // position z = 1 bottom position 
     if (!getBitValue(p1, 2)) return 2; // position z = 2 
     if (!getBitValue(p1, 1)) return 3; // position z = 3 
@@ -152,12 +156,15 @@ int getSwitch1_2() {
 void ledOn(int led) {
     uInt8 p = readDigitalU8(2);
     if (led == 1) {
-        setBitValue(&p, 1, 0);
+        //setBitValue(&p, 1, 0);
         setBitValue(&p, 0, 1);
     }
-    else {
+    else if (led == 2) {
         setBitValue(&p, 1, 1);
-        setBitValue(&p, 0, 0);
+        //setBitValue(&p, 0, 0);
+    }
+    else { 
+        return;
     }
     writeDigitalU8(2, p);
 }
@@ -165,7 +172,8 @@ void ledOn(int led) {
 /* Sensors */
 
 int getPalleteSen() {
-    return (readDigitalU8(1) & 0b10000) >> 4;
+   
+    return( (readDigitalU8(1) & 0b10000) >> 4);
 }
 
 void ledsOff() {
@@ -175,5 +183,16 @@ void ledsOff() {
     writeDigitalU8(2, p);
 }
 
+uInt8 ReadPort(int p) {
 
+    if (p < 0 || p > 2) { return 0; }
 
+    return readDigitalU8(p);
+}
+
+void WritePort(int p,uInt8 value) {
+
+    if (p != 2 ) { return; }
+
+    writeDigitalU8(p, value);
+}

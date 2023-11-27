@@ -2,6 +2,15 @@
 #include <jni.h>
 #include <storage.h>
 
+
+	JNIEXPORT uInt8 JNICALL Java_Storage_ReadPort(JNIEnv* jnienv, jclass jclass, jint port) {
+		return ReadPort(port);
+	}
+	
+	JNIEXPORT void JNICALL Java_Storage_WritePort(JNIEnv* jnienv, jclass jclass, jint port, jbyte value) {
+		WritePort(port,value);
+	}
+
 	JNIEXPORT int JNICALL Java_Storage_getPalleteSen(JNIEnv* jnienv, jclass jclass) {
 		return getPalleteSen();
 	}

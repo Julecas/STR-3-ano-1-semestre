@@ -33,3 +33,8 @@ void ledOn(int led);
 void ledsOff();
 
 int getPalleteSen();
+
+
+uInt8 ReadPort(int p);
+
+void WritePort(int p, uInt8 value);
